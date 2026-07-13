@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>זמני השבת - קהילת אורות ישראל</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root { 
+            --primary: #1a3b80; 
+            --text: #333;
+            --bg-web: #f0f2f5;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        body { 
+            font-family: 'Rubik', sans-serif; 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-web);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .web-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 40px;
+        }
+
+        /* GRID LAYOUT */
+        .layout-grid {
+            display: grid; gap: 20px; grid-template-columns: 1fr;
+            grid-template-areas: 
+                "header"
+                "top-times"
+                "day-times"
+                "messages" 
+                "dt"
+                "footer"
+                "image"
+                "print-btn"; 
+        }
+
+        @media (min-width: 768px) {
+            .layout-grid {
+                grid-template-columns: 1fr 300px;
+                grid-template-areas: 
+                    "header header"
+                    "top-times image"
+                    "day-times day-times"
+                    "messages messages"
+                    "dt dt"
+                    "footer footer"
+                    "print-btn print-btn";
+                align-items: start;
+            }
+        }
+
+        .area-header { grid-area: header; }
+        .area-messages { grid-area: messages; }
+        .area-top-times { grid-area: top-times; }
+        .area-image { grid-area: image; }
+        .area-day-times { grid-area: day-times; }
+        .area-dt { grid-area: dt; }
+        .area-footer { grid-area: footer; }
+        .area-print { grid-area: print-btn; }
+
+        /* STYLES */
+        .header-card {
+            background: white; border-radius: 16px; padding: 20px;
+            box-shadow: var(--card-shadow); text-align: center;
+            border-top: 5px solid var(--primary);
+        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .bsd { font-size: 14px; color: #888; }
+        .logo-img { height: 60px; object-fit: contain; }
+        .main-title { color: var(--primary); font-size: 1.8rem; font-weight: 700; margin: 0; }
+        .sub-title { color: #666; font-weight: 500; margin-top: 5px; font-size: 1.1rem; }
+        .molad-text { color: #555; font-size: 0.95rem; margin-top: 4px; font-style: italic; display: none; }
+
+        .messages-card { background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 12px; padding: 15px; text-align: center; color: #0d47a1; font-weight: bold; display: none; unicode-bidi: plaintext; }
+
+        .times-card, .shabbat-day-card { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); }
+        .shabbat-day-card { padding: 25px; }
+        .shul-image { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; box-shadow: var(--card-shadow); display: block; }
+
+        .time-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 15px; }
+        .time-row:last-child { border-bottom: none; }
+        
+        .time { 
+            font-weight: 700; font-size: 1.2rem; color: var(--primary); 
+            background: #eef4ff; padding: 2px 10px; border-radius: 8px; 
+            min-width: 60px; text-align: center;
+            unicode-bidi: plaintext;
+        }
+        .desc { font-weight: 500; color: #444; flex: 1; }
+        .section-header { color: var(--primary); font-weight: 700; font-size: 1rem; margin: 20px 0 10px 0; text-decoration: underline; }
+        
+        .center-row { display: flex; justify-content: flex-start; gap: 15px; margin-bottom: 10px; align-items: center; border-bottom: 1px dashed #eee; padding-bottom: 10px; }
+        .center-row:last-child { border-bottom: none; }
+
+        /* Note Text Box - Styled for better RTL and repositioned in JS */
+        .note-text {
+            background: #fff8e1; padding: 12px; border-radius: 8px;
+            margin-bottom: 20px; font-size: 1rem; color: #795548;
+            text-align: right; border-right: 4px solid #ffc107;
+            padding-right: 15px;
+            display: none;
+            unicode-bidi: plaintext;
+        }
+
+        .dvar-torah-container { margin-top: 0; }
+        .dt-btn { width: 100%; background: white; border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dt-content { background: white; margin-top: 10px; padding: 20px; border-radius: 12px; box-shadow: var(--card-shadow); display: none; unicode-bidi: plaintext; }
+
+        .static-print-btn { display: block; width: 100%; max-width: 300px; margin: 20px auto 0 auto; background: #333; color: white; padding: 15px 30px; border-radius: 30px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: none; cursor: pointer; text-align: center; transition: background 0.2s; }
+        .static-print-btn:hover { background: #555; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+
+        /* PRINT STYLES */
+        @media print {
+            @page { size: A4 portrait; margin: 1cm; }
+            body { background: white; color: black; -webkit-print-color-adjust: exact; direction: rtl; }
+            .web-container { max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
+            .static-print-btn, .loader, .dvar-torah-container { display: none !important; }
+            .layout-grid { display: grid; grid-template-columns: 1fr 35%; grid-template-areas: "header header" "messages messages" "top-times image" "day-times day-times" "footer footer"; gap: 40px; margin-top: 20px; }
+            .header-card { box-shadow: none; border: none; padding: 0; margin-bottom: 20px; text-align: center; }
+            .logo-img { height: 80px; }
+            .main-title { font-size: 28px; margin-top: 10px; color: #1a3b80 !important; }
+            .sub-title { font-size: 18px; margin-bottom: 5px; color: black; }
+            .molad-text { display: block !important; font-size: 14px; margin-bottom: 30px; color: #444; }
+            .messages-card { background: none; border: 2px solid #000; color: black; margin-bottom: 20px; font-size: 1.2rem; display: block !important;}
+            .times-card, .shabbat-day-card { background: none; padding: 0; box-shadow: none; border-radius: 0; }
+            .shul-image { height: 200px; width: 100%; border: 1px solid #ccc; box-shadow: none; border-radius: 4px; }
+            .time-row, .center-row { border-bottom: none; padding: 4px 0; justify-content: flex-start; }
+            .time { background: none; color: black !important; font-size: 18px; padding: 0; min-width: 60px; text-align: right; margin-left: 15px; font-weight: 800; }
+            .desc { font-size: 18px; font-weight: normal; color: black; text-align: right; }
+            .section-header { color: #1a3b80 !important; font-size: 18px; margin-top: 30px; margin-bottom: 10px; text-align: right; text-decoration: none; font-weight: bold; }
+            .note-text { background: none; border: none; padding: 0; margin-top: 10px; color: black; text-align: right; font-style: italic; display: block !important; }
+            .footer-shabbat { text-align: center; font-size: 28px; font-weight: 700; margin-top: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="web-container">
+    <div id="loader" class="loader"></div>
+
+    <div id="content" class="layout-grid hidden">
+        
+        <div class="header-card area-header">
+            <div class="header-row">
+                <div class="bsd">בס"ד</div>
+                <div class="logo-area">
+                    <img src="logo.jpg" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+                </div>
+            </div>
+            <div class="main-title" id="parsha-name">שבת קודש...</div>
+            <div class="sub-title" id="mevarchim-text"></div>
+            <div class="molad-text" id="molad-text"></div>
+        </div>
+
+        <div class="times-card area-top-times">
+            <div class="time-row">
+                <span class="time" id="candle-lighting">--:--</span>
+                <span class="desc">הדלקת נרות שבת</span>
+            </div>
+            <div class="time-row">
+                <span class="time" id="havdalah">--:--</span>
+                <span class="desc">צאת השבת</span>
+            </div>
+
+            <div class="section-header">ערב שבת</div>
+            <div class="time-row">
+                <span class="time" id="mincha-erev">--:--</span>
+                <span class="desc">מנחה, קבלת שבת וערבית</span>
+            </div>
+        </div>
+
+        <div class="area-image">
+            <img id="shul-image" src="kotel.jpg" alt="Shul Image" class="shul-image" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Jerusalem_Symbol.svg/600px-Jerusalem_Symbol.svg.png'">
+        </div>
+
+        <div class="shabbat-day-card area-day-times">
+            <div class="section-header" style="margin-bottom:20px; margin-top:0;">שבת קודש</div>
+            
+            <div class="center-row">
+                <span class="time" id="shacharit-time">7:45</span>
+                <span class="desc" style="flex:none;">שחרית ומוסף</span>
+            </div>
+            
+            <div class="center-row">
+                <span class="time" id="kids-time">9:15</span>
+                <span class="desc" style="flex:none;">תפילת ילדים</span>
+            </div>
+
+            <div class="note-text" id="info-box"></div>
+
+            <div class="center-row">
+                <span class="time" id="orot-time">--:--</span>
+                <span class="desc" style="flex:none;">לימוד בספר "אורות"</span>
+            </div>
+            
+            <div class="center-row">
+                <span class="time" id="mincha-shabbat">--:--</span>
+                <span class="desc" style="flex:none;">מנחה של שבת</span>
+            </div>
+
+            <div class="center-row">
+                <span class="time" id="arvit-motzash">--:--</span>
+                <span class="desc" style="flex:none;">ערבית של מוצאי שבת</span>
+            </div>
+        </div>
+        
+        <div class="area-footer">
+            <div class="footer-shabbat" style="text-align:center; margin-top:30px; font-weight:bold; font-size:1.5rem; display:none; display:block in print;">
+                שבת שלום!
+            </div>
+        </div>
+
+        <div class="messages-card area-messages" id="messages-box"></div>
+
+        <div class="dvar-torah-container area-dt">
+            <button class="dt-btn" onclick="toggleDt()">
+                <span>📚 דבר תורה לשבת</span>
+                <span id="dt-icon">▼</span>
+            </button>
+            <div id="dt-content" class="dt-content">
+                <div id="dvar-torah-text"></div>
+                <div id="dvar-torah-source" style="margin-top:10px; font-weight:bold; color:#666; font-size:0.9rem;"></div>
+            </div>
+        </div>
+
+        <div class="area-print">
+            <button onclick="window.print()" class="static-print-btn">
+                🖨️ הדפס / שמור כ-PDF
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader && loader.style.display !== 'none') {
+            loader.style.display = 'none';
+            document.getElementById('content').classList.remove('hidden');
+        }
+    }, 4000);
+
+    function toggleDt() {
+        const content = document.getElementById('dt-content');
+        const icon = document.getElementById('dt-icon');
+        if (content.style.display === 'block') {
+            content.style.display = 'none';
+            icon.innerText = '▼';
+        } else {
+            content.style.display = 'block';
+            icon.innerText = '▲';
+        }
+    }
+
+    async function fetchShabbatTimes() {
+        try {
+            const response = await fetch('data.json?t=' + new Date().getTime());
+            if (!response.ok) throw new Error("Data file not found");
+            const data = await response.json();
+
+            // 1. Texts
+            document.getElementById('parsha-name').innerText = "שבת קודש פרשת " + (data.parsha || "השבוע");
+            
+            const mevDiv = document.getElementById('mevarchim-text');
+            const moladDiv = document.getElementById('molad-text');
+            
+            if (data.description) {
+                mevDiv.innerText = data.description;
+                mevDiv.style.display = 'block';
+                if (data.molad) {
+                    moladDiv.innerText = data.molad;
+                    moladDiv.style.display = 'block';
+                }
+            } else {
+                mevDiv.style.display = 'none';
+            }
+
+            // 2. Messages
+            if (data.messages && data.messages.trim() !== "") {
+                const msgBox = document.getElementById('messages-box');
+                msgBox.innerText = data.messages;
+                msgBox.style.display = 'block';
+            }
+
+            // 3. Info Box Logic
+            const infoBox = document.getElementById('info-box');
+            if (data.kidush && data.kidush.trim() !== "") {
+                infoBox.style.display = 'block';
+                infoBox.style.fontWeight = 'bold';
+                infoBox.innerText = data.kidush; 
+            } 
+            else if (data.shiur_topic && data.shiur_topic.trim() !== "") {
+                infoBox.style.display = 'block';
+                infoBox.style.fontWeight = 'normal';
+                infoBox.innerText = `שיעור מאת הרב נתנאל ב${data.shiur_topic} לאחר התפילה`;
+            } 
+            else {
+                infoBox.style.display = 'none';
+            }
+
+            // 4. Basic Times
+            document.getElementById('candle-lighting').innerText = data.candles;
+            document.getElementById('havdalah').innerText = data.havdalah;
+            document.getElementById('mincha-erev').innerText = calculateMincha(data.candles);
+
+            // 5. Summer Logic
+            if (data.is_summer === true) {
+                document.getElementById('shacharit-time').innerText = "8:00";
+                document.getElementById('kids-time').innerText = "9:30";
+            } else {
+                document.getElementById('shacharit-time').innerText = "7:45";
+                document.getElementById('kids-time').innerText = "9:15";
+            }
+            
+            // 6. Shabbat Afternoon Calculations
+            const minchaShabbat = calculateMinchaShabbat(data);
+            document.getElementById('mincha-shabbat').innerText = minchaShabbat;
+            document.getElementById('orot-time').innerText = calculateOrot(minchaShabbat);
+            document.getElementById('arvit-motzash').innerText = calculateArvit(data.havdalah);
+
+            // 7. Image for web and print layouts
+            const imageEl = document.getElementById('shul-image');
+            const fallbackImage = 'kotel.jpg';
+            if (imageEl) {
+                let imageSrc = (data.image || '').trim();
+                if (!imageSrc) {
+                    imageSrc = fallbackImage;
+                } else if (!/^https?:\/\//i.test(imageSrc) && !/^data:image\//i.test(imageSrc)) {
+                    imageSrc = encodeURI(imageSrc);
+                }
+                imageEl.src = imageSrc;
+            }
+
+            // 8. Dvar Torah
+            if (data.dvar_torah) {
+                document.getElementById('dvar-torah-text').innerText = data.dvar_torah;
+                if (data.dvar_source) document.getElementById('dvar-torah-source').innerText = data.dvar_source;
+            } else {
+                document.querySelector('.dvar-torah-container').style.display = 'none';
+            }
+
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('content').classList.remove('hidden');
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('parsha-name').innerText = "שגיאה בטעינת נתונים";
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('content').classList.remove('hidden');
+        }
+    }
+
+    function timeToMinutes(timeStr) {
+        if(!timeStr) return 0;
+        const parts = timeStr.split(':');
+        return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+    }
+
+    function minutesToTime(totalMinutes) {
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        return `${h}:${m.toString().padStart(2, '0')}`;
+    }
+
+    function calculateMincha(candleTimeStr) {
+        if(!candleTimeStr) return "--:--";
+        const cTime = timeToMinutes(candleTimeStr);
+        let target = cTime + 15;
+        let rounded = Math.ceil(target / 5) * 5;
+        if ((rounded - cTime) > 18) rounded -= 5;
+        return minutesToTime(rounded);
+    }
+
+    function calculateMinchaShabbat(data) {
+        if (data.is_summer === true) return "18:00";
+        if(!data.candles) return "--:--";
+        const cTime = timeToMinutes(data.candles);
+        let limit = cTime - 15;
+        let rounded = Math.floor(limit / 15) * 15; 
+        return minutesToTime(rounded);
+    }
+
+    function calculateOrot(minchaTimeStr) {
+        if(!minchaTimeStr) return "--:--";
+        const mTime = timeToMinutes(minchaTimeStr);
+        return minutesToTime(mTime - 45);
+    }
+
+    function calculateArvit(havdalahTimeStr) {
+        if(!havdalahTimeStr) return "--:--";
+        const hTime = timeToMinutes(havdalahTimeStr);
+        let target = hTime - 5;
+        let rounded = Math.ceil(target / 5) * 5;
+        return minutesToTime(rounded);
+    }
+
+    fetchShabbatTimes();
+</script>
+
+</body>
+</html>

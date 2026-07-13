@@ -1,0 +1,91 @@
+name: Update Shabbat Times
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 8 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one Pages deployment at a time; queue others instead of failing.
+# Without this, rapid pushes / an overlapping scheduled run collide on the
+# single active Pages deployment and the losing run fails at "Deploy to GitHub Pages".
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Python libraries
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run Scraper
+        run: python scrape.py
+
+      - name: Upload Debug Screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: debug-screenshots
+          path: |
+            debug_view.png
+            error_view.png
+
+      - name: Commit data.json changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Shabbat times" && git push)
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Copy assets to frontend/public
+        run: |
+          cp data.json frontend/public/data.json
+          cp -f logo.jpg frontend/public/logo.jpg 2>/dev/null || true
+          cp -f kotel.jpg frontend/public/kotel.jpg 2>/dev/null || true
+          cp -f waze.svg frontend/public/waze.svg 2>/dev/null || true
+          cp -r images frontend/public/images 2>/dev/null || true
+          cp admin.html frontend/public/admin.html 2>/dev/null || true
+
+      - name: Build frontend
+        run: cd frontend && npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,404 @@
+﻿<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>ניהול - קהילת אורות ישראל</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1a3b80; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Rubik', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { color: var(--primary); font-size: 1.1rem; margin: 0 0 16px 0; border-bottom: 2px solid #eef4ff; padding-bottom: 8px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-weight: 500; margin-bottom: 6px; color: #444; }
+        .field input, .field textarea, .field select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Rubik', sans-serif; font-size: 0.95rem; direction: rtl; }
+        .field textarea { min-height: 80px; resize: vertical; }
+        .field select { appearance: none; background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23666'/%3E%3C/svg%3E") no-repeat left 12px center; padding-left: 32px; }
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-group button { flex: 1; padding: 8px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.2s; }
+        .toggle-group button.active { border-color: var(--primary); background: #eef4ff; color: var(--primary); }
+        .image-preview { margin-top: 10px; text-align: center; }
+        .image-preview img { max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #15306a; }
+        .btn-secondary { background: #e8e8e8; color: #333; margin-top: 10px; }
+        .btn-secondary:hover { background: #ddd; }
+        .status { text-align: center; padding: 12px; border-radius: 8px; margin-top: 16px; font-weight: 500; display: none; }
+        .status.success { display: block; background: #e8f5e9; color: #2e7d32; }
+        .status.error { display: block; background: #ffebee; color: #c62828; }
+        .status.loading { display: block; background: #e3f2fd; color: #1565c0; }
+        .setup-card { border: 2px dashed #ffc107; background: #fffde7; }
+        .setup-card input { font-family: monospace; direction: ltr; text-align: left; }
+        .current-data { font-size: 0.85rem; color: #888; margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔧 ניהול לוח שבת</h1>
+
+    <!-- Setup -->
+    <div class="card setup-card" id="setup-card">
+        <h2>⚙️ הגדרות חיבור</h2>
+        <div class="field">
+            <label>GitHub Token (PAT)</label>
+            <input type="password" id="gh-token" placeholder="ghp_...">
+        </div>
+        <div class="field">
+            <label>Repository (owner/repo)</label>
+            <input type="text" id="gh-repo" placeholder="username/looz" dir="ltr">
+        </div>
+        <button class="btn btn-primary" onclick="saveSetup()">שמור והתחבר</button>
+    </div>
+
+    <!-- Editor (hidden until connected) -->
+    <div id="editor" style="display:none;">
+        <div class="card">
+            <h2>📝 תוכן שבועי</h2>
+            <div class="field">
+                <label>נושא שיעור</label>
+                <input type="text" id="f-shiur" placeholder="הלכות שבת">
+            </div>
+            <div class="field">
+                <label>קידוש (אם ריק — יוצג שיעור)</label>
+                <input type="text" id="f-kidush" placeholder="">
+            </div>
+            <div class="field">
+                <label>הודעות</label>
+                <textarea id="f-messages" placeholder="הודעה חשובה..."></textarea>
+            </div>
+            <div class="field">
+                <label>תיאור שבת (למשל: שבת הגדול, שבת שירה)</label>
+                <input type="text" id="f-description" placeholder="אוטומטי (שבת מברכין וכו')">
+                <div class="current-data">השאר ריק לזיהוי אוטומטי</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⏰ הגדרות זמנים</h2>
+            <div class="field">
+                <label>מצב קיץ (שחרית 8:00, מנחה 18:00)</label>
+                <div class="toggle-group" id="summer-toggle">
+                    <button data-val="null" class="active" onclick="setSummer(null)">אוטומטי</button>
+                    <button data-val="true" onclick="setSummer(true)">קיץ</button>
+                    <button data-val="false" onclick="setSummer(false)">חורף</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🖼️ תמונה</h2>
+            <div class="field">
+                <label>בחר תמונה</label>
+                <select id="f-image">
+                    <option value="">אוטומטי (לפי פרשה)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>או העלה תמונה חדשה</label>
+                <input type="file" id="f-image-upload" accept="image/*">
+                <button class="btn btn-secondary" type="button" onclick="uploadImage()">העלה תמונה לריפו</button>
+            </div>
+            <div class="image-preview" id="image-preview"></div>
+        </div>
+
+        <button class="btn btn-primary" onclick="saveData()">💾 שמור וסנכרן</button>
+        <button class="btn btn-secondary" onclick="triggerWorkflow()">🔄 הפעל עדכון נתונים</button>
+        <div class="status" id="status"></div>
+    </div>
+</div>
+
+<script>
+    let currentSHA = null;
+    let summerValue = null;
+    let imageChangeBound = false;
+
+    function getConfig() {
+        return {
+            token: localStorage.getItem('gh_token') || '',
+            repo: localStorage.getItem('gh_repo') || ''
+        };
+    }
+
+    function ghHeaders(token) {
+        return {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        };
+    }
+
+    function showStatus(msg, type) {
+        const el = document.getElementById('status');
+        el.className = 'status ' + type;
+        el.innerText = msg;
+    }
+
+    // Turn a GitHub API failure status into an actionable Hebrew hint.
+    function ghErrorHint(status) {
+        if (status === 401) return 'הטוקן שגוי או פג תוקף — צור טוקן חדש והתחבר מחדש.';
+        if (status === 403) return 'לטוקן אין הרשאת כתיבה. בטוקן fine-grained הפעל "Contents: Read and write" (ולכפתור עדכון נתונים גם "Actions: Read and write") על המאגר; בטוקן קלאסי סמן את ה-scope בשם repo.';
+        if (status === 404) return 'המאגר או הקובץ לא נמצאו — בדוק שם repo בפורמט owner/repo.';
+        if (status === 409 || status === 422) return 'הנתונים בשרת השתנו — רענן את הדף ונסה שוב.';
+        return '';
+    }
+
+    async function ghFail(resp) {
+        const hint = ghErrorHint(resp.status);
+        return new Error(`HTTP ${resp.status}${hint ? ' — ' + hint : ''}`);
+    }
+
+    function saveSetup() {
+        const token = document.getElementById('gh-token').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        if (!token || !repo) { alert('נא למלא את כל השדות'); return; }
+        localStorage.setItem('gh_token', token);
+        localStorage.setItem('gh_repo', repo);
+        loadData();
+    }
+
+    function setSummer(val) {
+        summerValue = val;
+        document.querySelectorAll('#summer-toggle button').forEach(b => {
+            b.classList.toggle('active', String(b.dataset.val) === String(val));
+        });
+    }
+
+    async function loadData() {
+        const { token, repo } = getConfig();
+        if (!token || !repo) {
+            document.getElementById('setup-card').style.display = 'block';
+            return;
+        }
+
+        showStatus('טוען נתונים...', 'loading');
+        try {
+            const resp = await fetch(`https://api.github.com/repos/${repo}/contents/manual_data.json`, {
+                headers: ghHeaders(token)
+            });
+            if (resp.status === 404) {
+                // manual_data.json doesn't exist yet — start with a blank editor.
+                currentSHA = null;
+                setSummer(null);
+                await loadImages('');
+                document.getElementById('setup-card').style.display = 'none';
+                document.getElementById('editor').style.display = 'block';
+                showStatus('לא נמצא קובץ נתונים — מלא ושמור ליצירתו', 'success');
+                return;
+            }
+            if (!resp.ok) throw await ghFail(resp);
+            const file = await resp.json();
+            currentSHA = file.sha;
+
+            const decoded = new TextDecoder().decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0)));
+            const content = JSON.parse(decoded);
+            document.getElementById('f-shiur').value = content.shiur_topic || '';
+            document.getElementById('f-kidush').value = content.kidush || '';
+            document.getElementById('f-messages').value = content.messages || '';
+            document.getElementById('f-description').value = content.description || '';
+            setSummer(content.is_summer ?? null);
+
+            // Load images list
+            await loadImages(content.image);
+
+            document.getElementById('setup-card').style.display = 'none';
+            document.getElementById('editor').style.display = 'block';
+            showStatus('נטען בהצלחה', 'success');
+        } catch (e) {
+            showStatus('שגיאה בטעינה: ' + e.message, 'error');
+            document.getElementById('setup-card').style.display = 'block';
+        }
+    }
+
+    function createImageOption(select, imagePath, label) {
+        const existing = Array.from(select.options).find(opt => opt.value === imagePath);
+        if (existing) return;
+        const opt = document.createElement('option');
+        opt.value = imagePath;
+        opt.textContent = label || imagePath.replace(/^images\//, '').replace(/\.[^.]+$/, '');
+        select.appendChild(opt);
+    }
+
+    async function loadImages(selectedImage) {
+        const { token, repo } = getConfig();
+        const select = document.getElementById('f-image');
+        try {
+            const resp = await fetch(`https://api.github.com/repos/${repo}/contents/images`, {
+                headers: ghHeaders(token)
+            });
+            if (resp.ok) {
+                const files = await resp.json();
+                files.filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f.name)).forEach(f => {
+                    createImageOption(select, `images/${f.name}`);
+                });
+            }
+        } catch (e) {
+            // images folder might not exist yet
+        }
+
+        if (selectedImage && !Array.from(select.options).some(opt => opt.value === selectedImage)) {
+            createImageOption(select, selectedImage, 'תמונה שמורה ידנית');
+        }
+
+        if (selectedImage) select.value = selectedImage;
+
+        if (!imageChangeBound) {
+            select.addEventListener('change', () => {
+                const preview = document.getElementById('image-preview');
+                const imageValue = select.value;
+                if (!imageValue) {
+                    preview.innerHTML = '';
+                    return;
+                }
+
+                let previewUrl = imageValue;
+                if (!/^https?:\/\//i.test(imageValue) && !/^data:image\//i.test(imageValue)) {
+                    previewUrl = `https://raw.githubusercontent.com/${getConfig().repo}/main/${imageValue}`;
+                }
+                preview.innerHTML = `<img src="${encodeURI(previewUrl)}" alt="preview">`;
+            });
+            imageChangeBound = true;
+        }
+
+        select.dispatchEvent(new Event('change'));
+    }
+
+    async function uploadImage() {
+        const { token, repo } = getConfig();
+        const fileInput = document.getElementById('f-image-upload');
+        const file = fileInput.files && fileInput.files[0];
+
+        if (!token || !repo) return;
+        if (!file) {
+            showStatus('בחר קובץ תמונה לפני העלאה', 'error');
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            showStatus('ניתן להעלות רק קבצי תמונה', 'error');
+            return;
+        }
+
+        const safeOriginalName = file.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9._-]/g, '');
+        const extension = (safeOriginalName.match(/\.[a-z0-9]+$/) || ['.jpg'])[0];
+        const baseName = safeOriginalName.replace(/\.[a-z0-9]+$/, '') || 'image';
+        const finalName = `${Date.now()}-${baseName}${extension}`;
+        const imagePath = `images/${finalName}`;
+        const encodedPath = imagePath.split('/').map(encodeURIComponent).join('/');
+
+        showStatus('מעלה תמונה...', 'loading');
+
+        try {
+            const base64Content = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = String(reader.result || '');
+                    const commaIndex = result.indexOf(',');
+                    if (commaIndex === -1) {
+                        reject(new Error('Invalid file data'));
+                        return;
+                    }
+                    resolve(result.slice(commaIndex + 1));
+                };
+                reader.onerror = () => reject(new Error('קריאת הקובץ נכשלה'));
+                reader.readAsDataURL(file);
+            });
+
+            const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${encodedPath}`, {
+                method: 'PUT',
+                headers: ghHeaders(token),
+                body: JSON.stringify({
+                    message: `Upload image ${finalName} via admin`,
+                    content: base64Content
+                })
+            });
+
+            if (!resp.ok) throw await ghFail(resp);
+
+            const select = document.getElementById('f-image');
+            createImageOption(select, imagePath);
+            select.value = imagePath;
+            select.dispatchEvent(new Event('change'));
+            fileInput.value = '';
+            showStatus('התמונה הועלתה בהצלחה. לחץ "שמור וסנכרן" לשמירת הבחירה', 'success');
+        } catch (e) {
+            showStatus('שגיאה בהעלאת תמונה: ' + e.message, 'error');
+        }
+    }
+
+    async function saveData() {
+        const { token, repo } = getConfig();
+        if (!token || !repo) return;
+
+        // Empty fields are saved as empty strings (trimmed) so clearing a field
+        // actually clears it on the site — e.g. removing an announcement.
+        const val = (id) => document.getElementById(id).value.trim();
+        const data = {
+            shiur_topic: val('f-shiur'),
+            kidush: val('f-kidush'),
+            messages: val('f-messages'),
+            description: val('f-description'),
+            is_summer: summerValue,
+            image: document.getElementById('f-image').value || null
+        };
+
+        showStatus('שומר...', 'loading');
+        try {
+            const url = `https://api.github.com/repos/${repo}/contents/manual_data.json`;
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+
+            const put = () => {
+                const body = { message: 'Update manual_data.json via admin', content };
+                // Only send sha when updating an existing file; omit it to create one.
+                if (currentSHA) body.sha = currentSHA;
+                return fetch(url, { method: 'PUT', headers: ghHeaders(token), body: JSON.stringify(body) });
+            };
+
+            let resp = await put();
+            // A stale sha yields 409/422 — refetch the current sha and retry once
+            // so a save (including clearing a field) reliably lands.
+            if (resp.status === 409 || resp.status === 422) {
+                const latest = await fetch(url, { headers: ghHeaders(token) });
+                if (latest.ok) {
+                    currentSHA = (await latest.json()).sha;
+                    resp = await put();
+                }
+            }
+
+            if (!resp.ok) throw await ghFail(resp);
+            const result = await resp.json();
+            currentSHA = result.content.sha;
+            showStatus('נשמר בהצלחה! ✅', 'success');
+        } catch (e) {
+            showStatus('שגיאה בשמירה: ' + e.message, 'error');
+        }
+    }
+
+    async function triggerWorkflow() {
+        const { token, repo } = getConfig();
+        if (!token || !repo) return;
+
+        showStatus('מפעיל עדכון...', 'loading');
+        try {
+            const resp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/weekly_update.yml/dispatches`, {
+                method: 'POST',
+                headers: ghHeaders(token),
+                body: JSON.stringify({ ref: 'main' })
+            });
+
+            if (!resp.ok) throw await ghFail(resp);
+            showStatus('העדכון הופעל! הנתונים יתעדכנו בעוד כ-2 דקות. 🔄', 'success');
+        } catch (e) {
+            showStatus('שגיאה בהפעלה: ' + e.message, 'error');
+        }
+    }
+
+    // Auto-load on page open
+    loadData();
+</script>
+</body>
+</html>
