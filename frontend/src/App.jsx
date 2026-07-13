@@ -9,13 +9,15 @@ import ShareImage from './components/ShareImage';
 import UpcomingDays from './components/UpcomingDays';
 import ZmanimPanel from './components/ZmanimPanel';
 import YomTovBanner from './components/YomTovBanner';
+import OmerCounter from './components/OmerCounter';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
-import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov } from './lib/zmanim';
+import { locationLabel } from './lib/communities';
+import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov, getOmer } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { location } = useLocation();
 
   // Times/parsha/molad are computed live, client-side, from @hebcal/core for the
@@ -69,6 +71,14 @@ function AppContent() {
     }
   }, [location, yomTov]);
 
+  const omer = useMemo(() => {
+    try {
+      return getOmer(location);
+    } catch {
+      return null;
+    }
+  }, [location]);
+
   if (!data) {
     return (
       <div className="web-container">
@@ -84,6 +94,7 @@ function AppContent() {
       <Header data={data} />
       <Countdown data={data} />
       <MessagesCard messages={data.messages} />
+      <OmerCounter omer={omer} />
       <YomTovBanner yt={yomTov} zmanim={chagZmanim} />
       <UpcomingDays days={upcoming} />
       <Timeline data={data} />
@@ -94,6 +105,9 @@ function AppContent() {
       <footer className="footer-shabbat">
         <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>
       </footer>
+      <div className="times-note">
+        {t('timesNote', locationLabel(location, lang), location.candleMins)}
+      </div>
     </div>
   );
 }

@@ -295,3 +295,12 @@ export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
   }
   return null;
 }
+
+// ── Sefirat HaOmer — the day count during the Omer (Pesach→Shavuot), else null.
+export function getOmer(community, now = new Date()) {
+  const loc = locationOf(community);
+  const evs = HebrewCalendar.calendar({ start: now, end: now, location: loc, il: community.il, omer: true });
+  const o = evs.find((e) => e.getFlags() & flags.OMER_COUNT);
+  if (!o) return null;
+  return { day: o.omer, he: stripNikud(o.render('he')), en: o.render('en') };
+}

@@ -926,3 +926,16 @@ body {
   border-bottom: 1px dashed rgba(255,255,255,0.14); font-size: 0.95rem; color: #dfe3f5;
 }
 .yt-zmanim-time { color: #ffd97a; font-weight: 700; unicode-bidi: plaintext; }
+
+/* ── Omer counter + times transparency note ──────────────────────────── */
+.omer-chip {
+  align-self: center; display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #f5efe0, #efe4c8);
+  border: 1px solid #e0cf9f; border-radius: 999px;
+  padding: 8px 18px; font-weight: 700; color: #7a5c14;
+}
+.omer-ico { font-size: 1.1rem; }
+.times-note {
+  text-align: center; font-size: 0.8rem; color: #9a92a8;
+  margin-top: -8px; padding: 0 12px; unicode-bidi: plaintext;
+}

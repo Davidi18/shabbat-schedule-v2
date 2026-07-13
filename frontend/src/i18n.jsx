@@ -70,6 +70,7 @@ export const translations = {
     z_minchaGedola: 'מנחה גדולה', z_plag: 'פלג המנחה', z_shkia: 'שקיעה', z_tzeit: 'צאת הכוכבים',
     geoLocate: '📍 מיקום אוטומטי', geoBusy: '⏳ מאתר…', geoDenied: 'לא הצלחתי לאתר מיקום',
     ytLabel: 'החג הקרוב', ytCandles: 'הדלקת נרות', ytHavdalah: 'צאת החג', ytZmanim: 'זמני החג',
+    timesNote: (city, mins) => `זמנים מחושבים ל${city} · הדלקת נרות ${mins} דק׳ לפני שקיעה`,
   },
   en: {
     pageTitle: 'Shabbat Times - Orot Yisrael Community',
@@ -109,6 +110,7 @@ export const translations = {
     z_minchaGedola: 'Mincha Gedola', z_plag: 'Plag HaMincha', z_shkia: 'Sunset (Shkia)', z_tzeit: 'Nightfall (Tzeit)',
     geoLocate: '📍 Use my location', geoBusy: '⏳ Locating…', geoDenied: 'Could not get location',
     ytLabel: 'Next festival', ytCandles: 'Candle lighting', ytHavdalah: 'Festival ends', ytZmanim: 'Festival zmanim',
+    timesNote: (city, mins) => `Times computed for ${city} · candle-lighting ${mins} min before sunset`,
   },
   fr: {
     pageTitle: 'Horaires du Chabbat - Communauté Orot Israël',
@@ -148,6 +150,7 @@ export const translations = {
     z_minchaGedola: 'Min\'ha Guedola', z_plag: 'Plag HaMin\'ha', z_shkia: 'Coucher (Chkia)', z_tzeit: 'Tombée de la nuit',
     geoLocate: '📍 Ma position', geoBusy: '⏳ Localisation…', geoDenied: 'Localisation impossible',
     ytLabel: 'Prochaine fête', ytCandles: 'Allumage', ytHavdalah: 'Fin de la fête', ytZmanim: 'Zmanim de la fête',
+    timesNote: (city, mins) => `Horaires calculés pour ${city} · allumage ${mins} min avant le coucher`,
   },
 };
 
