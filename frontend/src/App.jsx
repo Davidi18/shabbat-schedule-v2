@@ -5,9 +5,10 @@ import MessagesCard from './components/MessagesCard';
 import Timeline from './components/Timeline';
 import DvarTorah from './components/DvarTorah';
 import ActionButtons from './components/ActionButtons';
+import UpcomingDays from './components/UpcomingDays';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
-import { getShabbatData } from './lib/zmanim';
+import { getShabbatData, getUpcomingDays } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
@@ -32,6 +33,14 @@ function AppContent() {
     }
   }, [location]);
 
+  const upcoming = useMemo(() => {
+    try {
+      return getUpcomingDays(location);
+    } catch {
+      return [];
+    }
+  }, [location]);
+
   if (!data) {
     return (
       <div className="web-container">
@@ -47,6 +56,7 @@ function AppContent() {
       <Header data={data} />
       <Countdown data={data} />
       <MessagesCard messages={data.messages} />
+      <UpcomingDays days={upcoming} />
       <Timeline data={data} />
       <DvarTorah data={data} />
       <ActionButtons data={data} />

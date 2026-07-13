@@ -192,3 +192,39 @@ export function getShabbatData(community, now = new Date()) {
     shabbat_date: new Date(target.eventTime).toLocaleDateString('en-CA', { timeZone: community.tz }),
   };
 }
+
+// ── Upcoming special days (holidays / Rosh Chodesh / fasts / special Shabbatot)
+// Stays true to the app: things the community prepares for BEFORE they arrive.
+const SPECIAL_MASK =
+  flags.CHAG | flags.ROSH_CHODESH | flags.MINOR_FAST | flags.MAJOR_FAST |
+  flags.SPECIAL_SHABBAT | flags.MODERN_HOLIDAY | flags.CHANUKAH_CANDLES;
+
+export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
+  const loc = locationOf(community);
+  const start = new Date(now.getTime());
+  const end = new Date(now.getTime() + daysAhead * 86400000);
+  const events = HebrewCalendar.calendar({
+    start, end, location: loc, il: community.il,
+  });
+
+  const seen = new Set();
+  const out = [];
+  for (const ev of events) {
+    if (!(ev.getFlags() & SPECIAL_MASK)) continue;
+    const greg = ev.getDate().greg();
+    const iso = greg.toISOString().slice(0, 10);
+    const he = ev.render('he');
+    const key = `${iso}|${he}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      date: iso,
+      weekdayEn: EN_WEEKDAYS[greg.getDay()],
+      he: stripNikud(he),
+      en: ev.render('en'),
+      isChag: !!(ev.getFlags() & flags.CHAG),
+      isFast: !!(ev.getFlags() & (flags.MINOR_FAST | flags.MAJOR_FAST)),
+    });
+  }
+  return out;
+}
