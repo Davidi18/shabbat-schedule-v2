@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>ניהול · זמני השבת</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#f4f1ea; --card:#fff; --ink:#2b2b45; --muted:#8b8397; --line:#e6e0d3; --gold:#b98a2e; --primary:#1a1a2e; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:'Rubik',sans-serif; padding:20px; }
+    .wrap { max-width:640px; margin:0 auto; }
+    h1 { font-size:1.4rem; margin:6px 0 2px; }
+    .sub { color:var(--muted); font-size:0.9rem; margin-bottom:18px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 2px 10px rgba(20,20,50,.04); }
+    .field { margin-bottom:14px; }
+    .field label { display:block; font-weight:700; font-size:0.92rem; margin-bottom:6px; }
+    .field .hint { font-weight:400; color:var(--muted); font-size:0.8rem; }
+    .field input, .field textarea, .field select { width:100%; padding:11px 12px; border:1px solid #ddd; border-radius:10px; font-family:'Rubik',sans-serif; font-size:0.95rem; direction:rtl; background:#fff; }
+    .field textarea { min-height:90px; resize:vertical; line-height:1.6; }
+    .setup input { font-family:monospace; direction:ltr; text-align:left; }
+    .toggle { display:flex; gap:8px; }
+    .toggle button { flex:1; padding:10px; border:1px solid #ddd; border-radius:10px; background:#fff; cursor:pointer; font-family:'Rubik',sans-serif; font-size:0.9rem; font-weight:500; }
+    .toggle button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .btn { width:100%; padding:13px; border:none; border-radius:12px; font-family:'Rubik',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; margin-top:6px; }
+    .btn-primary { background:var(--gold); color:#fff; }
+    .btn-primary:disabled { opacity:.55; cursor:default; }
+    .btn-ghost { background:transparent; color:var(--muted); font-weight:500; font-size:0.85rem; }
+    .status { margin-top:12px; padding:11px 13px; border-radius:10px; font-size:0.9rem; display:none; }
+    .status.show { display:block; }
+    .status.loading { background:#eef1f8; color:#3a4a7a; }
+    .status.success { background:#eaf7ee; color:#1f7a3d; }
+    .status.error { background:#fdecec; color:#b02121; }
+    a { color:var(--gold); }
+    .brand { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:8px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ניהול תוכן · זמני השבת</h1>
+  <div class="sub">מה שתערוך כאן יופיע באתר לכל הקהילה תוך כדקה. הזמנים, הפרשה והמולד מחושבים אוטומטית — כאן עורכים רק תוכן.</div>
+
+  <!-- One-time connection -->
+  <div class="card setup" id="setup-card" style="display:none">
+    <div class="field">
+      <label>GitHub Token <span class="hint">(חד־פעמי, נשמר רק במכשיר שלך)</span></label>
+      <input type="password" id="gh-token" placeholder="github_pat_... / ghp_..." />
+    </div>
+    <div class="field">
+      <label>מאגר (repo)</label>
+      <input type="text" id="gh-repo" placeholder="Davidi18/shabbat-schedule-v2" value="Davidi18/shabbat-schedule-v2" dir="ltr" />
+    </div>
+    <button class="btn btn-primary" onclick="saveSetup()">התחבר</button>
+    <div class="sub" style="margin:12px 0 0">צריך טוקן עם הרשאת <b>Contents: Read and write</b> על המאגר. <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">יצירת טוקן ←</a></div>
+  </div>
+
+  <!-- Editor -->
+  <div id="editor" style="display:none">
+    <div class="card">
+      <div class="field">
+        <label>נושא השיעור <span class="hint">(ברירת מחדל: הלכות שבת)</span></label>
+        <input type="text" id="f-shiur" placeholder="הלכות שבת" />
+      </div>
+      <div class="field">
+        <label>הודעות לקהילה <span class="hint">(בר מצווה, ברית, אזכרה, שמחות — יופיע בראש הדף. ריק = לא מוצג)</span></label>
+        <textarea id="f-messages" placeholder="לדוגמה: בר המצווה של משפחת כהן — קידושא רבא לאחר התפילה"></textarea>
+      </div>
+      <div class="field">
+        <label>קידוש <span class="hint">(טקסט קצר שיוצג בטיימליין. ריק = מוצג נושא השיעור)</span></label>
+        <input type="text" id="f-kidush" placeholder="" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>דבר תורה / הלכה</label>
+        <textarea id="f-dvar" style="min-height:150px"></textarea>
+      </div>
+      <div class="field">
+        <label>מקור</label>
+        <input type="text" id="f-dvar-source" placeholder="מקור: ..." />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field" style="margin-bottom:0">
+        <label>שעון קיץ <span class="hint">(אוטומטי מזהה לבד; שנה רק אם צריך לכפות)</span></label>
+        <div class="toggle" id="summer-toggle">
+          <button type="button" data-val="null" onclick="setSummer(null)">אוטומטי</button>
+          <button type="button" data-val="true" onclick="setSummer(true)">קיץ</button>
+          <button type="button" data-val="false" onclick="setSummer(false)">חורף</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="save-btn" onclick="saveData()">💾 שמור ופרסם</button>
+    <button class="btn btn-ghost" onclick="logout()">התנתק / החלף מאגר</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="brand">קהילת אורות ישראל 🦾</div>
+</div>
+
+<script data-cfasync="false">
+  const FILE_PATH = 'frontend/public/data.json';
+  let currentSHA = null;
+  let fullData = {};        // preserve unknown fields (_note etc.)
+  let summerValue = null;
+
+  const cfg = () => ({ token: localStorage.getItem('gh_token') || '', repo: (localStorage.getItem('gh_repo') || 'Davidi18/shabbat-schedule-v2') });
+  const headers = (token) => ({ 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' });
+  const $ = (id) => document.getElementById(id);
+
+  function status(msg, type) { const el = $('status'); el.className = 'status show ' + type; el.innerText = msg; }
+  function hint(s) {
+    if (s === 401) return 'הטוקן שגוי או פג תוקף — צור טוקן חדש.';
+    if (s === 403) return 'לטוקן אין הרשאת כתיבה. הפעל "Contents: Read and write" על המאגר.';
+    if (s === 404) return 'המאגר או הקובץ לא נמצאו — בדוק את שם המאגר (owner/repo).';
+    if (s === 409 || s === 422) return 'הנתונים בשרת השתנו — רענן ונסה שוב.';
+    return '';
+  }
+  async function fail(resp) { const h = hint(resp.status); return new Error(`HTTP ${resp.status}${h ? ' — ' + h : ''}`); }
+
+  function setSummer(val) {
+    summerValue = val;
+    document.querySelectorAll('#summer-toggle button').forEach((b) => b.classList.toggle('active', String(b.dataset.val) === String(val)));
+  }
+
+  function saveSetup() {
+    const token = $('gh-token').value.trim();
+    const repo = $('gh-repo').value.trim();
+    if (!token || !repo) { alert('נא למלא טוקן ומאגר'); return; }
+    localStorage.setItem('gh_token', token);
+    localStorage.setItem('gh_repo', repo);
+    load();
+  }
+
+  function logout() {
+    localStorage.removeItem('gh_token');
+    $('editor').style.display = 'none';
+    $('setup-card').style.display = 'block';
+  }
+
+  async function load() {
+    const { token, repo } = cfg();
+    if (!token || !repo) { $('setup-card').style.display = 'block'; return; }
+    status('טוען...', 'loading');
+    try {
+      const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${FILE_PATH}`, { headers: headers(token) });
+      if (!resp.ok) throw await fail(resp);
+      const file = await resp.json();
+      currentSHA = file.sha;
+      const decoded = new TextDecoder().decode(Uint8Array.from(atob(file.content), (c) => c.charCodeAt(0)));
+      fullData = JSON.parse(decoded);
+      $('f-shiur').value = fullData.shiur_topic || '';
+      $('f-messages').value = fullData.messages || '';
+      $('f-kidush').value = fullData.kidush || '';
+      $('f-dvar').value = fullData.dvar_torah || '';
+      $('f-dvar-source').value = fullData.dvar_source || '';
+      setSummer(fullData.is_summer ?? null);
+      $('setup-card').style.display = 'none';
+      $('editor').style.display = 'block';
+      status('נטען בהצלחה', 'success');
+    } catch (e) {
+      status('שגיאה בטעינה: ' + e.message, 'error');
+      $('setup-card').style.display = 'block';
+    }
+  }
+
+  async function saveData() {
+    const { token, repo } = cfg();
+    if (!token || !repo) return;
+    const v = (id) => $(id).value.trim();
+    const merged = {
+      ...fullData,
+      shiur_topic: v('f-shiur'),
+      messages: v('f-messages'),
+      kidush: v('f-kidush'),
+      dvar_torah: v('f-dvar'),
+      dvar_source: v('f-dvar-source'),
+      is_summer: summerValue,
+    };
+    $('save-btn').disabled = true;
+    status('שומר...', 'loading');
+    try {
+      const url = `https://api.github.com/repos/${repo}/contents/${FILE_PATH}`;
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(merged, null, 2) + '\n')));
+      const put = () => {
+        const body = { message: 'Update site content via admin', content };
+        if (currentSHA) body.sha = currentSHA;
+        return fetch(url, { method: 'PUT', headers: headers(token), body: JSON.stringify(body) });
+      };
+      let resp = await put();
+      if (resp.status === 409 || resp.status === 422) {
+        const latest = await fetch(url, { headers: headers(token) });
+        if (latest.ok) { currentSHA = (await latest.json()).sha; resp = await put(); }
+      }
+      if (!resp.ok) throw await fail(resp);
+      const result = await resp.json();
+      currentSHA = result.content.sha;
+      fullData = merged;
+      status('נשמר ופורסם! ✅ האתר יתעדכן תוך כדקה.', 'success');
+    } catch (e) {
+      status('שגיאה בשמירה: ' + e.message, 'error');
+    } finally {
+      $('save-btn').disabled = false;
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Header from './components/Header';
 import Countdown from './components/Countdown';
 import MessagesCard from './components/MessagesCard';
@@ -20,23 +20,38 @@ function AppContent() {
   const { t, lang } = useLang();
   const { location } = useLocation();
 
+  // Human-authored content (shiur topic, community messages, dvar torah, is_summer)
+  // lives in a runtime-fetched /data.json that the gabbai edits via /admin.html.
+  // A commit there auto-deploys, so edits go live with no code change. We start
+  // from the bundled defaults (so the app works offline / on first paint) and
+  // overlay the live file once it loads. Network-first, cache-safe fallback.
+  const [content, setContent] = useState(curated);
+  useEffect(() => {
+    let alive = true;
+    fetch('data.json', { cache: 'no-cache' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((live) => { if (alive && live && typeof live === 'object') setContent({ ...curated, ...live }); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   // Times/parsha/molad are computed live, client-side, from @hebcal/core for the
   // selected location — no scraping, no stale data.json. Recomputes on change.
   // Curated (human-authored) fields are merged on top.
   const data = useMemo(() => {
     try {
       const live = getShabbatData(location);
-      const merged = { ...curated, ...live };
+      const merged = { ...content, ...live };
       // Manual is_summer override wins over the auto-detected value (as before).
-      if (curated.is_summer !== null && curated.is_summer !== undefined) {
-        merged.is_summer = curated.is_summer;
+      if (content.is_summer !== null && content.is_summer !== undefined) {
+        merged.is_summer = content.is_summer;
       }
       return merged;
     } catch (e) {
       console.error('zmanim engine failed', e);
       return null;
     }
-  }, [location]);
+  }, [location, content]);
 
   const upcoming = useMemo(() => {
     try {
