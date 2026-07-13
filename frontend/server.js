@@ -47,10 +47,6 @@ function writeContent(obj) {
 // Only these fields are gabbai-editable; everything else is computed live.
 const EDITABLE = ['shiur_topic', 'messages', 'kidush', 'dvar_torah', 'dvar_source', 'is_summer'];
 
-function authed(req) {
-  return ADMIN_KEY && req.headers['x-admin-key'] === ADMIN_KEY;
-}
-
 function sendJSON(res, code, obj) {
   const body = JSON.stringify(obj);
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -106,9 +102,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url === '/api/content' && req.method === 'POST') {
-    if (!authed(req)) return sendJSON(res, 401, { error: 'unauthorized' });
     try {
-      const incoming = JSON.parse(await readBody(req) || '{}');
+      // Auth key travels in the JSON body (not an HTTP header) so a non-ASCII
+      // password (e.g. Hebrew) works — headers can't carry chars outside latin1.
+      const { _key, ...incoming } = JSON.parse(await readBody(req) || '{}');
+      if (!ADMIN_KEY || _key !== ADMIN_KEY) return sendJSON(res, 401, { error: 'unauthorized' });
       const current = readContent();
       const next = { ...current };
       for (const k of EDITABLE) if (k in incoming) next[k] = incoming[k];

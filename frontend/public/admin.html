@@ -148,6 +148,7 @@
   async function save() {
     const v = (id) => $(id).value.trim();
     const body = {
+      _key: key(),
       shiur_topic: v('f-shiur'),
       messages: v('f-messages'),
       kidush: v('f-kidush'),
@@ -160,7 +161,7 @@
     try {
       const r = await fetch('/api/content', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       if (r.status === 401) { status('status', 'ההרשאה פגה — התחבר מחדש.', 'error'); logout(); return; }
