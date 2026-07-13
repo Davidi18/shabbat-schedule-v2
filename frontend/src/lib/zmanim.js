@@ -197,7 +197,10 @@ export function getShabbatData(community, now = new Date()) {
 // Stays true to the app: things the community prepares for BEFORE they arrive.
 const SPECIAL_MASK =
   flags.CHAG | flags.ROSH_CHODESH | flags.MINOR_FAST | flags.MAJOR_FAST |
-  flags.SPECIAL_SHABBAT | flags.MODERN_HOLIDAY | flags.CHANUKAH_CANDLES;
+  flags.SPECIAL_SHABBAT | flags.CHANUKAH_CANDLES;
+// hebcal lumps all civic days into MODERN_HOLIDAY (Jabotinsky/Herzl/Rabin/…).
+// A religious-Zionist community only marks these four — the rest is noise.
+const KEEP_MODERN = new Set(["Yom HaShoah", "Yom HaZikaron", "Yom HaAtzma'ut", 'Yom Yerushalayim']);
 
 export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
   const loc = locationOf(community);
@@ -210,7 +213,10 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
   const seen = new Set();
   const out = [];
   for (const ev of events) {
-    if (!(ev.getFlags() & SPECIAL_MASK)) continue;
+    const f = ev.getFlags();
+    const keep = (f & SPECIAL_MASK) ||
+      ((f & flags.MODERN_HOLIDAY) && KEEP_MODERN.has(ev.getDesc()));
+    if (!keep) continue;
     const greg = ev.getDate().greg();
     const iso = greg.toISOString().slice(0, 10);
     const he = ev.render('he');
