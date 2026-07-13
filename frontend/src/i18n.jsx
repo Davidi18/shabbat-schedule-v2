@@ -64,6 +64,12 @@ export const translations = {
     upcoming: 'בקרוב',
     shareImg: '📸 שיתוף הזמנים כתמונה',
     shareImgBusy: '⏳ מכין תמונה…',
+    zmanimTitle: 'זמני היום (שבת)',
+    z_alot: 'עלות השחר', z_misheyakir: 'משיכיר', z_netz: 'נץ החמה',
+    z_sofShma: 'סוף זמן ק״ש', z_sofTfilla: 'סוף זמן תפילה', z_chatzot: 'חצות היום',
+    z_minchaGedola: 'מנחה גדולה', z_plag: 'פלג המנחה', z_shkia: 'שקיעה', z_tzeit: 'צאת הכוכבים',
+    geoLocate: '📍 מיקום אוטומטי', geoBusy: '⏳ מאתר…', geoDenied: 'לא הצלחתי לאתר מיקום',
+    ytLabel: 'החג הקרוב', ytCandles: 'הדלקת נרות', ytHavdalah: 'צאת החג',
   },
   en: {
     pageTitle: 'Shabbat Times - Orot Yisrael Community',
@@ -97,6 +103,12 @@ export const translations = {
     upcoming: 'Coming up',
     shareImg: '📸 Share times as image',
     shareImgBusy: '⏳ Preparing…',
+    zmanimTitle: 'Daily zmanim (Shabbat)',
+    z_alot: 'Dawn (Alot)', z_misheyakir: 'Misheyakir', z_netz: 'Sunrise (Netz)',
+    z_sofShma: 'Latest Shema', z_sofTfilla: 'Latest Shacharit', z_chatzot: 'Midday (Chatzot)',
+    z_minchaGedola: 'Mincha Gedola', z_plag: 'Plag HaMincha', z_shkia: 'Sunset (Shkia)', z_tzeit: 'Nightfall (Tzeit)',
+    geoLocate: '📍 Use my location', geoBusy: '⏳ Locating…', geoDenied: 'Could not get location',
+    ytLabel: 'Next festival', ytCandles: 'Candle lighting', ytHavdalah: 'Festival ends',
   },
   fr: {
     pageTitle: 'Horaires du Chabbat - Communauté Orot Israël',
@@ -130,6 +142,12 @@ export const translations = {
     upcoming: 'À venir',
     shareImg: '📸 Partager en image',
     shareImgBusy: '⏳ Préparation…',
+    zmanimTitle: 'Zmanim du jour (Chabbat)',
+    z_alot: 'Aube (Alot)', z_misheyakir: 'Misheyakir', z_netz: 'Lever (Netz)',
+    z_sofShma: 'Chéma limite', z_sofTfilla: 'Amida limite', z_chatzot: 'Midi (Hatsot)',
+    z_minchaGedola: 'Min\'ha Guedola', z_plag: 'Plag HaMin\'ha', z_shkia: 'Coucher (Chkia)', z_tzeit: 'Tombée de la nuit',
+    geoLocate: '📍 Ma position', geoBusy: '⏳ Localisation…', geoDenied: 'Localisation impossible',
+    ytLabel: 'Prochaine fête', ytCandles: 'Allumage', ytHavdalah: 'Fin de la fête',
   },
 };
 

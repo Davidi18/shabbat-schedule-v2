@@ -117,3 +117,21 @@ export const LOCATION_GROUPS = [
 export const COMMUNITIES = LOCATIONS;
 export const DEFAULT_COMMUNITY = DEFAULT_LOCATION;
 export const getCommunity = getLocation;
+
+// Haversine (km) → nearest CITY profile to a coordinate (community excluded).
+export function nearestLocation(lat, lng) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  let best = DEFAULT_LOCATION;
+  let bestKm = Infinity;
+  for (const id in LOCATIONS) {
+    const l = LOCATIONS[id];
+    if (l.kind === 'community') continue;
+    const dLat = toRad(l.lat - lat);
+    const dLng = toRad(l.lng - lng);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat)) * Math.cos(toRad(l.lat)) * Math.sin(dLng / 2) ** 2;
+    const km = 6371 * 2 * Math.asin(Math.sqrt(a));
+    if (km < bestKm) { bestKm = km; best = id; }
+  }
+  return best;
+}

@@ -837,3 +837,55 @@ body {
   margin-top: auto; font-size: 60px; font-weight: 700; color: #e9d9a6;
   letter-spacing: 1px;
 }
+
+/* ── Location row + geolocate button ─────────────────────────────────── */
+.loc-row { display: inline-flex; align-items: center; gap: 8px; }
+.loc-geo {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28);
+  color: #fff; font-size: 1rem; cursor: pointer; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.2s ease;
+}
+.loc-geo:hover { background: rgba(255,255,255,0.22); }
+.loc-geo:disabled { opacity: 0.7; cursor: default; }
+
+/* ── Yom Tov (next festival) banner ──────────────────────────────────── */
+.yt-banner {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #2a1f56, #3a2b74);
+  border: 1px solid #5847a0; border-radius: 16px;
+  padding: 14px 18px; color: #fff; box-shadow: var(--card-shadow);
+}
+.yt-ico { font-size: 1.8rem; }
+.yt-label { font-weight: 700; font-size: 1.05rem; color: #f0e6c8; }
+.yt-times { font-size: 0.98rem; color: #d9def2; margin-top: 2px; }
+.yt-times b { color: #ffd97a; unicode-bidi: plaintext; }
+
+/* ── Daily zmanim panel ──────────────────────────────────────────────── */
+.zmanim-panel {
+  background: #fff; border: 1px solid #ece7d6; border-radius: 16px;
+  box-shadow: var(--card-shadow); overflow: hidden;
+}
+.zmanim-summary {
+  list-style: none; cursor: pointer; padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; color: var(--primary); font-size: 1.05rem;
+}
+.zmanim-summary::-webkit-details-marker { display: none; }
+.zmanim-caret { transition: transform 0.2s ease; color: var(--gold); }
+.zmanim-panel[open] .zmanim-caret { transform: rotate(180deg); }
+.zmanim-list {
+  padding: 4px 20px 18px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 22px;
+}
+@media (max-width: 460px) { .zmanim-list { grid-template-columns: 1fr; } }
+.zmanim-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px dashed #eee6d4;
+}
+.zmanim-name { color: #514b3a; font-weight: 500; }
+.zmanim-time {
+  font-weight: 700; color: var(--primary); unicode-bidi: plaintext;
+  background: #eef4ff; padding: 1px 9px; border-radius: 7px;
+}

@@ -10,7 +10,7 @@
 // Curated, human-authored fields (dvar_torah, shiur_topic, messages, …) are NOT
 // computed here — they come from src/data/curated.json and are merged in App.
 
-import { HebrewCalendar, Location, Molad, HDate, flags } from '@hebcal/core';
+import { HebrewCalendar, Location, Molad, HDate, Zmanim, flags } from '@hebcal/core';
 
 const EN_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HEB_WEEKDAYS = {
@@ -238,4 +238,60 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
     });
   }
   return out;
+}
+
+// ── Full daily zmanim (GRA) for a location + date, elevation-aware.
+// The Shabbat-relevant set: dawn → nightfall.
+export function getDayZmanim(community, date = new Date()) {
+  const loc = locationOf(community);
+  const z = new Zmanim(loc, date, !!community.useElevation);
+  const fmt = (fn) => {
+    try {
+      const d = fn();
+      return d ? d.toLocaleTimeString('en-GB', {
+        timeZone: community.tz, hour: '2-digit', minute: '2-digit', hour12: false,
+      }) : '--:--';
+    } catch { return '--:--'; }
+  };
+  return [
+    { key: 'alot', time: fmt(() => z.alotHaShachar()) },
+    { key: 'misheyakir', time: fmt(() => z.misheyakir()) },
+    { key: 'netz', time: fmt(() => z.sunrise()) },
+    { key: 'sofShma', time: fmt(() => z.sofZmanShma()) },
+    { key: 'sofTfilla', time: fmt(() => z.sofZmanTfilla()) },
+    { key: 'chatzot', time: fmt(() => z.chatzot()) },
+    { key: 'minchaGedola', time: fmt(() => z.minchaGedola()) },
+    { key: 'plag', time: fmt(() => z.plagHaMincha()) },
+    { key: 'shkia', time: fmt(() => z.shkiah()) },
+    { key: 'tzeit', time: fmt(() => z.tzeit()) },
+  ];
+}
+
+// ── Next Yom Tov (festival) heads-up — the chag the community prepares for.
+// Returns the upcoming festival's entry candle-lighting + its ending havdalah,
+// or null when no festival is near. Regular Shabbatot are skipped.
+export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
+  const loc = locationOf(community);
+  const end = new Date(now.getTime() + daysAhead * 86400000);
+  const events = HebrewCalendar.calendar({
+    start: now, end, location: loc,
+    candlelighting: true, candleLightingMins: community.candleMins,
+    il: community.il, useElevation: !!community.useElevation,
+  });
+
+  const candles = events.filter((e) => e.getDesc() === 'Candle lighting' && e.eventTime && e.eventTime >= now);
+  for (const ce of candles) {
+    const nextDay = ce.getDate().add(1, 'd');
+    const chag = events.find((e) => (e.getFlags() & flags.CHAG) && sameGregDay(e.getDate().greg(), nextDay.greg()));
+    if (!chag) continue; // this candle-lighting is a regular Shabbat, not a festival
+    const hav = events.find((e) => e.getDesc() === 'Havdalah' && e.eventTime && e.eventTime > ce.eventTime);
+    return {
+      he: stripNikud(chag.render('he')),
+      en: chag.render('en'),
+      date: nextDay.greg().toISOString().slice(0, 10),
+      candles: fmtTime(ce.eventTime, community.tz),
+      havdalah: hav ? fmtTime(hav.eventTime, community.tz) : null,
+    };
+  }
+  return null;
 }

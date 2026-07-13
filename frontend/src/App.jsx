@@ -7,9 +7,11 @@ import DvarTorah from './components/DvarTorah';
 import ActionButtons from './components/ActionButtons';
 import ShareImage from './components/ShareImage';
 import UpcomingDays from './components/UpcomingDays';
+import ZmanimPanel from './components/ZmanimPanel';
+import YomTovBanner from './components/YomTovBanner';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
-import { getShabbatData, getUpcomingDays } from './lib/zmanim';
+import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
@@ -42,6 +44,23 @@ function AppContent() {
     }
   }, [location]);
 
+  const yomTov = useMemo(() => {
+    try {
+      return getNextYomTov(location);
+    } catch {
+      return null;
+    }
+  }, [location]);
+
+  const zmanim = useMemo(() => {
+    try {
+      const day = data?.shabbat_date ? new Date(`${data.shabbat_date}T12:00:00`) : new Date();
+      return getDayZmanim(location, day);
+    } catch {
+      return [];
+    }
+  }, [location, data]);
+
   if (!data) {
     return (
       <div className="web-container">
@@ -57,8 +76,10 @@ function AppContent() {
       <Header data={data} />
       <Countdown data={data} />
       <MessagesCard messages={data.messages} />
+      <YomTovBanner yt={yomTov} />
       <UpcomingDays days={upcoming} />
       <Timeline data={data} />
+      <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
       <ShareImage data={data} />
       <ActionButtons data={data} />
