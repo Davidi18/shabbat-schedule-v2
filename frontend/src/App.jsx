@@ -28,7 +28,7 @@ function AppContent() {
   const [content, setContent] = useState(curated);
   useEffect(() => {
     let alive = true;
-    fetch('data.json', { cache: 'no-cache' })
+    fetch('/api/content', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((live) => { if (alive && live && typeof live === 'object') setContent({ ...curated, ...live }); })
       .catch(() => {});
