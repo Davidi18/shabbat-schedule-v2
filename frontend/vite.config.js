@@ -4,10 +4,21 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // The whole zmanim engine runs client-side (@hebcal/core), so once the app shell
 // is cached the PWA computes times for ANY week and ANY location fully offline.
+// Exclude our scripts from Cloudflare Rocket Loader, which otherwise rewrites the
+// ES-module <script> tag (type="…-module") and breaks the app. data-cfasync="false"
+// tells Rocket Loader to leave them alone — no Cloudflare dashboard change needed.
+const cfAsyncFalse = {
+  name: 'cf-async-false',
+  transformIndexHtml(html) {
+    return html.replace(/<script(?![^>]*\bdata-cfasync=)/g, '<script data-cfasync="false"');
+  },
+}
+
 export default defineConfig({
   base: './',
   plugins: [
     react(),
+    cfAsyncFalse,
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'kotel.jpg', 'logo.jpg'],
