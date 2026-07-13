@@ -59,6 +59,8 @@ export const translations = {
     group_community: 'קהילה',
     group_israel: 'ישראל',
     group_diaspora: 'חו״ל',
+    remind: '🔔 תזכורת להדלקת נרות',
+    install: '📲 התקן אפליקציה',
   },
   en: {
     pageTitle: 'Shabbat Times - Orot Yisrael Community',
@@ -87,6 +89,8 @@ export const translations = {
     group_community: 'Community',
     group_israel: 'Israel',
     group_diaspora: 'Diaspora',
+    remind: '🔔 Candle-lighting reminder',
+    install: '📲 Install app',
   },
   fr: {
     pageTitle: 'Horaires du Chabbat - Communauté Orot Israël',
@@ -115,6 +119,8 @@ export const translations = {
     group_community: 'Communauté',
     group_israel: 'Israël',
     group_diaspora: 'Diaspora',
+    remind: '🔔 Rappel allumage',
+    install: '📲 Installer l\'app',
   },
 };
 

@@ -184,7 +184,11 @@ export function getShabbatData(community, now = new Date()) {
     mevarchim: !!mev,
     candles,
     havdalah,
+    // Precise UTC instants (ISO) for calendar reminders / countdown.
+    candles_dt: candleEvt ? candleEvt.eventTime.toISOString() : null,
+    havdalah_dt: target.eventTime.toISOString(),
     is_summer: detectIsSummer(friGreg, community.tz),
-    shabbat_date: satGreg.toISOString().slice(0, 10),
+    // Civil date of Shabbat (Saturday) in the location's timezone.
+    shabbat_date: new Date(target.eventTime).toLocaleDateString('en-CA', { timeZone: community.tz }),
   };
 }

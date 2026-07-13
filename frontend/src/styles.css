@@ -751,3 +751,15 @@ body {
   color: #1a1a2e;
   background: #fff;
 }
+
+/* ── Reminder / install action buttons (Phase 3) ─────────────────────── */
+.btn-remind {
+  background: linear-gradient(135deg, #b8860b, #daa520);
+  color: #fff;
+}
+.btn-install {
+  background: linear-gradient(135deg, #2f6f4f, #3c8c63);
+  color: #fff;
+}
+.btn-remind:hover { filter: brightness(1.08); }
+.btn-install:hover { filter: brightness(1.08); }

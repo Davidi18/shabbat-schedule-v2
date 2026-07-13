@@ -49,7 +49,7 @@ function AppContent() {
       <MessagesCard messages={data.messages} />
       <Timeline data={data} />
       <DvarTorah data={data} />
-      <ActionButtons />
+      <ActionButtons data={data} />
       <footer className="footer-shabbat">
         <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>
       </footer>
