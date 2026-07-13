@@ -10,7 +10,7 @@
 // Curated, human-authored fields (dvar_torah, shiur_topic, messages, …) are NOT
 // computed here — they come from src/data/curated.json and are merged in App.
 
-import { HebrewCalendar, Location, Molad, HDate, Zmanim, flags } from '@hebcal/core';
+import { HebrewCalendar, Location, Molad, HDate, Zmanim, flags, gematriya } from '@hebcal/core';
 
 const EN_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HEB_WEEKDAYS = {
@@ -222,7 +222,8 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
     const keep = (f & SPECIAL_MASK) ||
       ((f & flags.MODERN_HOLIDAY) && KEEP_MODERN.has(ev.getDesc()));
     if (!keep) continue;
-    const greg = ev.getDate().greg();
+    const hd = ev.getDate();
+    const greg = hd.greg();
     const iso = greg.toISOString().slice(0, 10);
     const he = ev.render('he');
     const key = `${iso}|${he}`;
@@ -230,6 +231,8 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
     seen.add(key);
     out.push({
       date: iso,
+      // Short Hebrew date, e.g. "י״ז בְּתַמּוּז" → "י״ז תמוז".
+      he_date: `${gematriya(hd.getDate())} ${HEB_MONTHS[hd.getMonthName()] || hd.getMonthName()}`,
       weekdayEn: EN_WEEKDAYS[greg.getDay()],
       he: stripNikud(he),
       en: ev.render('en'),

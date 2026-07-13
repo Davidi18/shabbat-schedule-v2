@@ -27,7 +27,6 @@ export default function LocationPicker() {
   return (
     <div className="loc-row">
       <label className="loc-picker" title={t('locationLabel')}>
-        <span className="loc-pin" aria-hidden="true">📍</span>
         <span className="loc-current">{locationLabel(location, lang)}</span>
         <select
           className="loc-select"

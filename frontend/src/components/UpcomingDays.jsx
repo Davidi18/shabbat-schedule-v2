@@ -27,7 +27,11 @@ export default function UpcomingDays({ days }) {
             className={`up-chip${d.isChag ? ' up-chag' : ''}${d.isFast ? ' up-fast' : ''}`}
           >
             <span className="up-name">{lang === 'he' ? d.he : d.en}</span>
-            <span className="up-date">{shortDate(d.date, lang)}</span>
+            <span className="up-date">
+              {lang === 'he' && d.he_date
+                ? <>{d.he_date}<span className="up-date-greg">{shortDate(d.date, lang)}</span></>
+                : shortDate(d.date, lang)}
+            </span>
           </div>
         ))}
       </div>
