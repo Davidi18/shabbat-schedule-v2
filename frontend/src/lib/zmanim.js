@@ -10,7 +10,7 @@
 // Curated, human-authored fields (dvar_torah, shiur_topic, messages, …) are NOT
 // computed here — they come from src/data/curated.json and are merged in App.
 
-import { HebrewCalendar, Location, HDate, Molad, flags } from '@hebcal/core';
+import { HebrewCalendar, Location, Molad, flags } from '@hebcal/core';
 
 const EN_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HEB_WEEKDAYS = {
