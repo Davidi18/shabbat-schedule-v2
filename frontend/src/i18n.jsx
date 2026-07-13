@@ -62,6 +62,8 @@ export const translations = {
     remind: '🔔 תזכורת להדלקת נרות',
     install: '📲 התקן אפליקציה',
     upcoming: 'בקרוב',
+    shareImg: '📸 שיתוף הזמנים כתמונה',
+    shareImgBusy: '⏳ מכין תמונה…',
   },
   en: {
     pageTitle: 'Shabbat Times - Orot Yisrael Community',
@@ -93,6 +95,8 @@ export const translations = {
     remind: '🔔 Candle-lighting reminder',
     install: '📲 Install app',
     upcoming: 'Coming up',
+    shareImg: '📸 Share times as image',
+    shareImgBusy: '⏳ Preparing…',
   },
   fr: {
     pageTitle: 'Horaires du Chabbat - Communauté Orot Israël',
@@ -124,6 +128,8 @@ export const translations = {
     remind: '🔔 Rappel allumage',
     install: '📲 Installer l\'app',
     upcoming: 'À venir',
+    shareImg: '📸 Partager en image',
+    shareImgBusy: '⏳ Préparation…',
   },
 };
 

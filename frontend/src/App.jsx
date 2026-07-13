@@ -5,6 +5,7 @@ import MessagesCard from './components/MessagesCard';
 import Timeline from './components/Timeline';
 import DvarTorah from './components/DvarTorah';
 import ActionButtons from './components/ActionButtons';
+import ShareImage from './components/ShareImage';
 import UpcomingDays from './components/UpcomingDays';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
@@ -59,6 +60,7 @@ function AppContent() {
       <UpcomingDays days={upcoming} />
       <Timeline data={data} />
       <DvarTorah data={data} />
+      <ShareImage data={data} />
       <ActionButtons data={data} />
       <footer className="footer-shabbat">
         <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>

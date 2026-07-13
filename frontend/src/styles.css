@@ -788,3 +788,52 @@ body {
 .up-chag .up-name { color: #9a6b12; }
 .up-fast { background: #f6f4f8; border-color: #e2dbe8; }
 .up-fast .up-name { color: #6a6478; }
+
+/* ── Share as image (next level) ─────────────────────────────────────── */
+.btn-shareimg {
+  display: block; width: calc(100% - 8px); margin: 10px auto 4px;
+  background: linear-gradient(135deg, #1f6f4f, #2f9c6a);
+  color: #fff; font-weight: 800; font-size: 1.05rem;
+  border: none; box-shadow: 0 4px 14px rgba(31, 111, 79, 0.28);
+}
+.btn-shareimg:hover { filter: brightness(1.06); }
+.btn-shareimg:disabled { opacity: 0.7; cursor: default; }
+
+/* Off-screen render target for the shared PNG (1080×1350). */
+.share-card {
+  position: fixed; left: -20000px; top: 0;
+  width: 1080px; height: 1350px; pointer-events: none;
+}
+.share-card .sc-inner {
+  width: 100%; height: 100%; box-sizing: border-box; padding: 90px 70px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(201,162,39,0.18), transparent 60%),
+    linear-gradient(160deg, #10152e 0%, #1b2450 55%, #10152e 100%);
+  color: #fff; font-family: 'Frank Ruhl Libre', 'Rubik', serif;
+}
+.sc-bsd { align-self: flex-end; font-size: 30px; opacity: 0.7; font-family: 'Rubik', sans-serif; }
+.sc-community {
+  margin-top: 6px; font-size: 46px; font-weight: 700; color: #e9d9a6;
+  font-family: 'Rubik', sans-serif; letter-spacing: 0.5px;
+}
+.sc-orn { color: #c9a227; font-size: 34px; margin: 22px 0 10px; letter-spacing: 10px; }
+.sc-title { font-size: 92px; font-weight: 700; line-height: 1.1; margin: 6px 0; }
+.sc-sub { font-size: 40px; color: #cdd6f5; margin-top: 6px; font-family: 'Rubik', sans-serif; }
+.sc-dates { font-size: 40px; color: #b9c2e6; margin-top: 20px; font-family: 'Rubik', sans-serif; }
+.sc-times {
+  display: flex; align-items: stretch; justify-content: center; gap: 0;
+  margin: 70px 0 40px; width: 100%;
+}
+.sc-time-block { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.sc-time-ico { font-size: 66px; }
+.sc-time-label { font-size: 40px; color: #cdd6f5; font-family: 'Rubik', sans-serif; }
+.sc-time-val {
+  font-size: 130px; font-weight: 800; color: #f2e4b0;
+  font-family: 'Rubik', sans-serif; line-height: 1;
+}
+.sc-divider { width: 2px; background: linear-gradient(#c9a22700, #c9a22766, #c9a22700); margin: 0 20px; }
+.sc-footer {
+  margin-top: auto; font-size: 60px; font-weight: 700; color: #e9d9a6;
+  letter-spacing: 1px;
+}

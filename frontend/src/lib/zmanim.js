@@ -10,7 +10,7 @@
 // Curated, human-authored fields (dvar_torah, shiur_topic, messages, …) are NOT
 // computed here — they come from src/data/curated.json and are merged in App.
 
-import { HebrewCalendar, Location, Molad, flags } from '@hebcal/core';
+import { HebrewCalendar, Location, Molad, HDate, flags } from '@hebcal/core';
 
 const EN_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HEB_WEEKDAYS = {
@@ -175,6 +175,9 @@ export function getShabbatData(community, now = new Date()) {
   const moladInfo = mev ? buildMolad(mev) : { molad: '', molad_parts: null };
   const description = mev ? `שבת מברכין חודש ${mev.monthHe}` : '';
 
+  // Civil (YYYY-MM-DD) date of Shabbat/Saturday in the location's timezone.
+  const satCivil = new Date(target.eventTime).toLocaleDateString('en-CA', { timeZone: community.tz });
+
   return {
     parsha,
     parsha_en,
@@ -189,7 +192,9 @@ export function getShabbatData(community, now = new Date()) {
     havdalah_dt: target.eventTime.toISOString(),
     is_summer: detectIsSummer(friGreg, community.tz),
     // Civil date of Shabbat (Saturday) in the location's timezone.
-    shabbat_date: new Date(target.eventTime).toLocaleDateString('en-CA', { timeZone: community.tz }),
+    shabbat_date: satCivil,
+    // Hebrew date of Shabbat, e.g. "כ״ז בְּתַמּוּז תשפ״ו".
+    hebrew_date: new HDate(new Date(`${satCivil}T12:00:00Z`)).renderGematriya(),
   };
 }
 
