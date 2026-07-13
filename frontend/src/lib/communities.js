@@ -17,8 +17,13 @@ export const COMMUNITIES = {
     geonameid: 281184,
     il: true,
     // Candle-lighting minutes before sunset. Jerusalem minhag is 40.
-    // (Legacy site published ~19:09 vs 40-min 19:04 — 5-min gap under review.)
     candleMins: 40,
+    // Elevation-aware sunset. With Jerusalem's 754m + useElevation, the engine
+    // reproduces itimlabina's published candle time EXACTLY (verified 19:09=19:09,
+    // Emanuel Zisman St / geo 31.7198189,35.2306758) — same source the legacy
+    // scraper read. This is also the more halachically precise sunset.
+    elevation: 754,
+    useElevation: true,
   },
 };
 

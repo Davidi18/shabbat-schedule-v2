@@ -27,7 +27,7 @@ const stripNikud = (s) => (s || '').replace(/[֑-ׇ]/g, '');
 const pad2 = (n) => String(n).padStart(2, '0');
 
 function locationOf(c) {
-  return new Location(c.lat, c.lng, c.il, c.tz, c.cityHe || c.name, 'IL', c.geonameid);
+  return new Location(c.lat, c.lng, c.il, c.tz, c.cityHe || c.name, 'IL', c.geonameid, c.elevation || 0);
 }
 
 function fmtTime(date, tz) {
@@ -134,6 +134,7 @@ export function getShabbatData(community, now = new Date()) {
     candleLightingMins: community.candleMins,
     il: community.il,
     sedrot: true,
+    useElevation: !!community.useElevation,
   });
 
   const havdalahEvents = events.filter((e) => e.getDesc() === 'Havdalah' && e.eventTime);
