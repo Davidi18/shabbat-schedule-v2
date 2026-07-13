@@ -61,6 +61,14 @@ function AppContent() {
     }
   }, [location, data]);
 
+  const chagZmanim = useMemo(() => {
+    try {
+      return yomTov?.date ? getDayZmanim(location, new Date(`${yomTov.date}T12:00:00`)) : [];
+    } catch {
+      return [];
+    }
+  }, [location, yomTov]);
+
   if (!data) {
     return (
       <div className="web-container">
@@ -76,7 +84,7 @@ function AppContent() {
       <Header data={data} />
       <Countdown data={data} />
       <MessagesCard messages={data.messages} />
-      <YomTovBanner yt={yomTov} />
+      <YomTovBanner yt={yomTov} zmanim={chagZmanim} />
       <UpcomingDays days={upcoming} />
       <Timeline data={data} />
       <ZmanimPanel zmanim={zmanim} />
