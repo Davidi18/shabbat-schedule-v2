@@ -6,19 +6,20 @@ import Timeline from './components/Timeline';
 import DvarTorah from './components/DvarTorah';
 import ActionButtons from './components/ActionButtons';
 import { LangProvider, useLang } from './i18n';
+import { LocationProvider, useLocation } from './location';
 import { getShabbatData } from './lib/zmanim';
-import { getCommunity, DEFAULT_COMMUNITY } from './lib/communities';
 import curated from './data/curated.json';
 
 function AppContent() {
   const { t } = useLang();
+  const { location } = useLocation();
 
-  // Times/parsha/molad are computed live, client-side, from @hebcal/core — no
-  // scraping, no stale data.json. Curated (human-authored) fields are merged on top.
+  // Times/parsha/molad are computed live, client-side, from @hebcal/core for the
+  // selected location — no scraping, no stale data.json. Recomputes on change.
+  // Curated (human-authored) fields are merged on top.
   const data = useMemo(() => {
     try {
-      const community = getCommunity(DEFAULT_COMMUNITY);
-      const live = getShabbatData(community);
+      const live = getShabbatData(location);
       const merged = { ...curated, ...live };
       // Manual is_summer override wins over the auto-detected value (as before).
       if (curated.is_summer !== null && curated.is_summer !== undefined) {
@@ -29,7 +30,7 @@ function AppContent() {
       console.error('zmanim engine failed', e);
       return null;
     }
-  }, []);
+  }, [location]);
 
   if (!data) {
     return (
@@ -59,7 +60,9 @@ function AppContent() {
 export default function App() {
   return (
     <LangProvider>
-      <AppContent />
+      <LocationProvider>
+        <AppContent />
+      </LocationProvider>
     </LangProvider>
   );
 }

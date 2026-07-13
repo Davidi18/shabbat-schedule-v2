@@ -27,7 +27,12 @@ const stripNikud = (s) => (s || '').replace(/[֑-ׇ]/g, '');
 const pad2 = (n) => String(n).padStart(2, '0');
 
 function locationOf(c) {
-  return new Location(c.lat, c.lng, c.il, c.tz, c.cityHe || c.name, 'IL', c.geonameid, c.elevation || 0);
+  return new Location(
+    c.lat, c.lng, c.il, c.tz,
+    c.cityEn || c.en || c.cityHe || c.he,
+    c.cc || (c.il ? 'IL' : 'US'),
+    c.geonameid, c.elevation || 0,
+  );
 }
 
 function fmtTime(date, tz) {

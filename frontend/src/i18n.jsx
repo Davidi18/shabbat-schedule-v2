@@ -55,6 +55,10 @@ export const translations = {
     error: 'שגיאה בטעינת נתונים',
     cdBefore: 'שבת נכנסת בעוד',
     cdDuring: 'שבת שלום! צאת השבת בעוד',
+    locationLabel: 'בחירת מיקום',
+    group_community: 'קהילה',
+    group_israel: 'ישראל',
+    group_diaspora: 'חו״ל',
   },
   en: {
     pageTitle: 'Shabbat Times - Orot Yisrael Community',
@@ -79,6 +83,10 @@ export const translations = {
     error: 'Error loading data',
     cdBefore: 'Shabbat begins in',
     cdDuring: 'Shabbat Shalom! Shabbat ends in',
+    locationLabel: 'Choose location',
+    group_community: 'Community',
+    group_israel: 'Israel',
+    group_diaspora: 'Diaspora',
   },
   fr: {
     pageTitle: 'Horaires du Chabbat - Communauté Orot Israël',
@@ -103,6 +111,10 @@ export const translations = {
     error: 'Erreur de chargement des données',
     cdBefore: 'Le Chabbat commence dans',
     cdDuring: 'Chabbat Chalom ! Fin du Chabbat dans',
+    locationLabel: 'Choisir un lieu',
+    group_community: 'Communauté',
+    group_israel: 'Israël',
+    group_diaspora: 'Diaspora',
   },
 };
 

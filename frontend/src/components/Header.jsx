@@ -1,5 +1,6 @@
 import { useLang, parshaName, descriptionText } from '../i18n';
 import LanguageToggle from './LanguageToggle';
+import LocationPicker from './LocationPicker';
 
 export default function Header({ data }) {
   const { t, lang } = useLang();
@@ -16,6 +17,10 @@ export default function Header({ data }) {
           className="logo-img"
           onError={(e) => { e.target.style.display = 'none'; }}
         />
+      </div>
+
+      <div className="hero-locrow">
+        <LocationPicker />
       </div>
 
       <div className="hero-body">
