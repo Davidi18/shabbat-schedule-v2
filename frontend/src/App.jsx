@@ -35,6 +35,19 @@ function AppContent() {
     return () => { alive = false; };
   }, []);
 
+  // The dvar torah rotates automatically (server picks a weekly Arukh HaShulchan
+  // se'if via Sefaria) — it is not gabbai-edited. Bundled curated text remains
+  // the offline/first-paint fallback until this resolves.
+  const [dvar, setDvar] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/dvar', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d?.dvar_torah) setDvar(d); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   // Times/parsha/molad are computed live, client-side, from @hebcal/core for the
   // selected location — no scraping, no stale data.json. Recomputes on change.
   // Curated (human-authored) fields are merged on top.
@@ -46,12 +59,21 @@ function AppContent() {
       if (content.is_summer !== null && content.is_summer !== undefined) {
         merged.is_summer = content.is_summer;
       }
+      // A gabbai-written description overrides the computed one (שבת מברכין…).
+      if (content.description && content.description.trim()) {
+        merged.description = content.description.trim();
+      }
+      // Weekly automatic dvar torah wins over any stale saved/bundled text.
+      if (dvar?.dvar_torah) {
+        merged.dvar_torah = dvar.dvar_torah;
+        merged.dvar_source = dvar.dvar_source || '';
+      }
       return merged;
     } catch (e) {
       console.error('zmanim engine failed', e);
       return null;
     }
-  }, [location, content]);
+  }, [location, content, dvar]);
 
   const upcoming = useMemo(() => {
     try {

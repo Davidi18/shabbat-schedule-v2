@@ -167,8 +167,10 @@ function monthName(lang, monthEn) {
 export function descriptionText(lang, data) {
   const desc = (data.description || '').trim();
   if (lang === 'he') return desc;
-  const isMevarchim = data.mevarchim || desc.startsWith('שבת מברכין');
-  if (!isMevarchim) return desc;
+  // Only the auto-generated "שבת מברכין חודש X" line gets translated; a
+  // custom gabbai-written description is shown verbatim in every language.
+  const isAutoMevarchim = desc.startsWith('שבת מברכין');
+  if (!isAutoMevarchim) return desc;
   const monthEn = data.molad_parts?.month_en;
   const month = monthEn ? monthName(lang, monthEn) : '';
   if (lang === 'en') return month ? `Shabbat Mevarchim — Chodesh ${month}` : 'Shabbat Mevarchim';

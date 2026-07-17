@@ -39,7 +39,7 @@
 <body>
 <div class="wrap">
   <h1>ניהול תוכן · זמני השבת</h1>
-  <div class="sub">מה שתערוך כאן יופיע באתר לכל הקהילה מיד. הזמנים, הפרשה והמולד מחושבים אוטומטית — כאן עורכים רק תוכן.</div>
+  <div class="sub">מה שתערוך כאן יופיע באתר לכל הקהילה מיד. הזמנים, הפרשה, המולד וההלכה השבועית מתעדכנים אוטומטית — כאן עורכים רק תוכן.</div>
 
   <!-- Login -->
   <div class="card" id="login-card" style="display:none">
@@ -55,6 +55,10 @@
   <div id="editor" style="display:none">
     <div class="card">
       <div class="field">
+        <label>תיאור השבת <span class="hint">(שורה מתחת לכותרת. ריק = אוטומטי, למשל "שבת מברכין חודש אב")</span></label>
+        <input type="text" id="f-desc" placeholder="" />
+      </div>
+      <div class="field">
         <label>נושא השיעור <span class="hint">(ברירת מחדל: הלכות שבת)</span></label>
         <input type="text" id="f-shiur" placeholder="הלכות שבת" />
       </div>
@@ -65,17 +69,6 @@
       <div class="field">
         <label>קידוש <span class="hint">(טקסט קצר בטיימליין. ריק = מוצג נושא השיעור)</span></label>
         <input type="text" id="f-kidush" placeholder="" />
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="field">
-        <label>דבר תורה / הלכה</label>
-        <textarea id="f-dvar" style="min-height:150px"></textarea>
-      </div>
-      <div class="field">
-        <label>מקור</label>
-        <input type="text" id="f-dvar-source" placeholder="מקור: ..." />
       </div>
     </div>
 
@@ -112,11 +105,10 @@
   async function loadContent() {
     const r = await fetch('/api/content', { cache: 'no-store' });
     const c = r.ok ? await r.json() : {};
+    $('f-desc').value = c.description || '';
     $('f-shiur').value = c.shiur_topic || '';
     $('f-messages').value = c.messages || '';
     $('f-kidush').value = c.kidush || '';
-    $('f-dvar').value = c.dvar_torah || '';
-    $('f-dvar-source').value = c.dvar_source || '';
     setSummer(c.is_summer ?? null);
   }
 
@@ -149,11 +141,10 @@
     const v = (id) => $(id).value.trim();
     const body = {
       _key: key(),
+      description: v('f-desc'),
       shiur_topic: v('f-shiur'),
       messages: v('f-messages'),
       kidush: v('f-kidush'),
-      dvar_torah: v('f-dvar'),
-      dvar_source: v('f-dvar-source'),
       is_summer: summerValue,
     };
     $('save-btn').disabled = true;

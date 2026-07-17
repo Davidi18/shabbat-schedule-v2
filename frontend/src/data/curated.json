@@ -1,6 +1,7 @@
 {
-  "_note": "Human-authored fields the engine does NOT compute. Edit here (Phase 2 will make this an admin screen). Times/parsha/molad are computed live in lib/zmanim.js.",
+  "_note": "Human-authored fields the engine does NOT compute; the gabbai edits them via /admin.html. Times/parsha/molad are computed live in lib/zmanim.js; dvar_torah here is only the offline/first-paint fallback — the live one rotates weekly via /api/dvar.",
   "is_summer": null,
+  "description": "",
   "shiur_topic": "הלכות שבת",
   "kidush": "",
   "messages": "",

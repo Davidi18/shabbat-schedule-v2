@@ -6,11 +6,14 @@
 //                              bundled default shipped in dist/data.json)
 //   POST /api/content        → save content (requires header x-admin-key)
 //   POST /api/login          → validate the gabbai password
+//   GET  /api/dvar           → this week's automatic halacha (Arukh HaShulchan
+//                              via Sefaria, deterministic per week, disk-cached)
 //   everything else          → static file from dist/, SPA fallback to index.html
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { upcomingShabbatKey, fetchWeeklyDvar } from './dvar.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -45,7 +48,41 @@ function writeContent(obj) {
 }
 
 // Only these fields are gabbai-editable; everything else is computed live.
-const EDITABLE = ['shiur_topic', 'messages', 'kidush', 'dvar_torah', 'dvar_source', 'is_summer'];
+// (dvar_torah is no longer editable — it rotates automatically via /api/dvar.)
+const EDITABLE = ['shiur_topic', 'messages', 'kidush', 'description', 'is_summer'];
+
+// ── Weekly automatic dvar torah ─────────────────────────────────────────
+// Cached on the data volume so Sefaria is hit at most once per week (per
+// container). In-flight promise is shared so concurrent requests don't stampede.
+const DVAR_FILE = path.join(DATA_DIR, 'dvar.json');
+let dvarInflight = null;
+
+async function getDvar() {
+  const week = upcomingShabbatKey();
+  try {
+    if (fs.existsSync(DVAR_FILE)) {
+      const cached = JSON.parse(fs.readFileSync(DVAR_FILE, 'utf8'));
+      if (cached.week === week && cached.dvar_torah) return cached;
+    }
+  } catch { /* refetch below */ }
+
+  if (!dvarInflight) {
+    dvarInflight = fetchWeeklyDvar(week).finally(() => { dvarInflight = null; });
+  }
+  const fresh = await dvarInflight;
+  if (fresh) {
+    try {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      fs.writeFileSync(DVAR_FILE, JSON.stringify(fresh, null, 2) + '\n', 'utf8');
+    } catch { /* cache write is best-effort */ }
+    return fresh;
+  }
+  // Sefaria unreachable: serve last week's cached se'if rather than nothing.
+  try {
+    if (fs.existsSync(DVAR_FILE)) return JSON.parse(fs.readFileSync(DVAR_FILE, 'utf8'));
+  } catch { /* ignore */ }
+  return null;
+}
 
 function sendJSON(res, code, obj) {
   const body = JSON.stringify(obj);
@@ -91,6 +128,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url === '/api/content' && req.method === 'GET') {
     return sendJSON(res, 200, readContent());
+  }
+
+  if (url === '/api/dvar' && req.method === 'GET') {
+    const dvar = await getDvar();
+    return sendJSON(res, dvar ? 200 : 503, dvar || { error: 'unavailable' });
   }
 
   if (url === '/api/login' && req.method === 'POST') {
