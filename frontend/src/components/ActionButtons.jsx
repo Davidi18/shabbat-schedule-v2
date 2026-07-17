@@ -32,7 +32,7 @@ function buildIcs({ candlesIso, title }) {
   ].join('\r\n');
 }
 
-export default function ActionButtons({ data }) {
+export default function ActionButtons({ data, children }) {
   const { t } = useLang();
   const [installEvt, setInstallEvt] = useState(null);
 
@@ -78,6 +78,7 @@ export default function ActionButtons({ data }) {
 
   return (
     <div className="action-row">
+      {children}
       {data?.candles_dt && (
         <button onClick={handleReminder} className="btn-action btn-remind">
           {t('remind')}

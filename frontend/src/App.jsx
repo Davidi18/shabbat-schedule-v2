@@ -115,8 +115,9 @@ function AppContent() {
       <Timeline data={data} />
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
-      <ShareImage data={data} />
-      <ActionButtons data={data} />
+      <ActionButtons data={data}>
+        <ShareImage data={data} />
+      </ActionButtons>
       <footer className="footer-shabbat">
         <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>
       </footer>

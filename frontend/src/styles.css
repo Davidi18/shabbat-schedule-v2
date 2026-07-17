@@ -754,15 +754,17 @@ body {
 
 /* ── Reminder / install action buttons (Phase 3) ─────────────────────── */
 .btn-remind {
-  background: linear-gradient(135deg, #b8860b, #daa520);
-  color: #fff;
+  background: white;
+  color: #8a6d12;
+  border: 1.5px solid var(--gold);
 }
 .btn-install {
-  background: linear-gradient(135deg, #2f6f4f, #3c8c63);
-  color: #fff;
+  background: white;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
 }
-.btn-remind:hover { filter: brightness(1.08); }
-.btn-install:hover { filter: brightness(1.08); }
+.btn-remind:hover { background: var(--gold-soft); }
+.btn-install:hover { background: #eef4ff; }
 
 /* ── Upcoming special days (Phase 4) ─────────────────────────────────── */
 .upcoming { width: 100%; max-width: 640px; margin: 18px auto 6px; padding: 0 4px; box-sizing: border-box; }
@@ -795,12 +797,11 @@ body {
 
 /* ── Share as image (next level) ─────────────────────────────────────── */
 .btn-shareimg {
-  display: block; width: calc(100% - 8px); margin: 10px auto 4px;
-  background: linear-gradient(135deg, #1f6f4f, #2f9c6a);
-  color: #fff; font-weight: 800; font-size: 1.05rem;
-  border: none; box-shadow: 0 4px 14px rgba(31, 111, 79, 0.28);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(26, 59, 128, 0.3);
 }
-.btn-shareimg:hover { filter: brightness(1.06); }
+.btn-shareimg:hover { background: var(--primary-dark); }
 .btn-shareimg:disabled { opacity: 0.7; cursor: default; }
 
 /* Off-screen render target for the shared PNG (1080×1350). */
@@ -842,17 +843,8 @@ body {
   letter-spacing: 1px;
 }
 
-/* ── Location row + geolocate button ─────────────────────────────────── */
+/* ── Location row ────────────────────────────────────────────────────── */
 .loc-row { display: inline-flex; align-items: center; gap: 8px; }
-.loc-geo {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28);
-  color: #fff; font-size: 1rem; cursor: pointer; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: background 0.2s ease;
-}
-.loc-geo:hover { background: rgba(255,255,255,0.22); }
-.loc-geo:disabled { opacity: 0.7; cursor: default; }
 
 /* ── Yom Tov (next festival) banner ──────────────────────────────────── */
 .yt-banner {
