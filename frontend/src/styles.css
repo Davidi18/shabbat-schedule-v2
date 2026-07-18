@@ -569,6 +569,7 @@ body {
     .action-row,
     .dvar-torah-container,
     .lang-toggle,
+    .donate-overlay,
     .loader {
         display: none !important;
     }
@@ -842,6 +843,97 @@ body {
   margin-top: auto; font-size: 60px; font-weight: 700; color: #e9d9a6;
   letter-spacing: 1px;
 }
+
+/* ── Donations ───────────────────────────────────────────────────────── */
+.btn-donate {
+  background: #a8841c;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(168, 132, 28, 0.3);
+}
+.btn-donate:hover { background: #8f6f15; }
+
+.donate-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(18, 24, 46, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.donate-card {
+  position: relative;
+  background: #fff;
+  border-radius: 18px;
+  border-top: 4px solid var(--gold);
+  padding: 26px 24px 22px;
+  max-width: 380px; width: 100%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: dtOpen 0.25s ease;
+}
+
+.donate-close {
+  position: absolute; top: 10px; inset-inline-end: 12px;
+  background: none; border: none; font-size: 1rem; color: #999;
+  cursor: pointer; padding: 4px; line-height: 1;
+}
+.donate-close:hover { color: var(--ink); }
+
+.donate-title {
+  font-family: var(--serif);
+  color: var(--primary);
+  font-size: 1.25rem;
+  margin: 0 0 16px;
+}
+
+.donate-paybox {
+  display: block;
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.02rem;
+  padding: 13px;
+  border-radius: 999px;
+  box-shadow: 0 4px 15px rgba(26, 59, 128, 0.3);
+  transition: background 0.2s;
+}
+.donate-paybox:hover { background: var(--primary-dark); }
+
+.donate-divider {
+  display: flex; align-items: center; gap: 10px;
+  color: #888; font-size: 0.85rem;
+  margin: 16px 0 10px;
+}
+.donate-divider::before,
+.donate-divider::after { content: ''; height: 1px; flex: 1; background: #e6e0d3; }
+
+.donate-rows {
+  background: var(--bg);
+  border: 1px solid #eee5d0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.donate-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; font-size: 0.95rem; color: #555;
+}
+.donate-row + .donate-row { border-top: 1px dashed #e6e0d3; }
+.donate-row b { color: var(--ink); unicode-bidi: plaintext; }
+
+.donate-copy {
+  background: none;
+  border: 1.5px solid var(--gold);
+  color: #8a6d12;
+  border-radius: 999px;
+  padding: 8px 18px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.donate-copy:hover { background: var(--gold-soft); }
 
 /* ── Location row ────────────────────────────────────────────────────── */
 .loc-row { display: inline-flex; align-items: center; gap: 8px; }

@@ -6,6 +6,7 @@ import Timeline from './components/Timeline';
 import DvarTorah from './components/DvarTorah';
 import ActionButtons from './components/ActionButtons';
 import ShareImage from './components/ShareImage';
+import Donations from './components/Donations';
 import UpcomingDays from './components/UpcomingDays';
 import ZmanimPanel from './components/ZmanimPanel';
 import YomTovBanner from './components/YomTovBanner';
@@ -139,6 +140,7 @@ function AppContent() {
       <DvarTorah data={data} />
       <ActionButtons data={data}>
         <ShareImage data={data} />
+        <Donations />
       </ActionButtons>
       <footer className="footer-shabbat">
         <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>
