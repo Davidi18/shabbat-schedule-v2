@@ -1,31 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
 // Provider + hook co-located (same convention as i18n.jsx).
-import { createContext, useContext, useEffect, useState } from 'react';
-import { getLocation, DEFAULT_LOCATION, LOCATIONS } from './lib/communities';
+// The site shows a single community's times — the location is pinned to the
+// default and there is no picker UI. (A previously saved localStorage choice
+// from the old picker is intentionally ignored so everyone sees our times.)
+import { createContext, useContext } from 'react';
+import { getLocation, DEFAULT_LOCATION } from './lib/communities';
 
 const LocationContext = createContext(null);
 
 export function LocationProvider({ children }) {
-  const [locationId, setLocationId] = useState(() => {
-    try {
-      const saved = localStorage.getItem('locationId');
-      return saved && LOCATIONS[saved] ? saved : DEFAULT_LOCATION;
-    } catch {
-      return DEFAULT_LOCATION;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('locationId', locationId);
-    } catch {
-      // localStorage unavailable — selection just won't persist
-    }
-  }, [locationId]);
-
-  const location = getLocation(locationId);
+  const location = getLocation(DEFAULT_LOCATION);
   return (
-    <LocationContext.Provider value={{ locationId, setLocationId, location }}>
+    <LocationContext.Provider value={{ locationId: DEFAULT_LOCATION, location }}>
       {children}
     </LocationContext.Provider>
   );
