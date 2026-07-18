@@ -207,6 +207,13 @@ const SPECIAL_MASK =
 // A religious-Zionist community only marks these four — the rest is noise.
 const KEEP_MODERN = new Set(["Yom HaShoah", "Yom HaZikaron", "Yom HaAtzma'ut", 'Yom Yerushalayim']);
 
+// Calendar (wall-clock) date of a local-midnight Date as YYYY-MM-DD.
+// NOT toISOString(): that converts to UTC, which rolls local midnight back to
+// the previous day anywhere east of Greenwich (e.g. all of Israel).
+function localIsoDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
   const loc = locationOf(community);
   const start = new Date(now.getTime());
@@ -215,6 +222,7 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
     start, end, location: loc, il: community.il,
   });
 
+  const todayIso = localIsoDate(now);
   const seen = new Set();
   const out = [];
   for (const ev of events) {
@@ -224,7 +232,9 @@ export function getUpcomingDays(community, now = new Date(), daysAhead = 60) {
     if (!keep) continue;
     const hd = ev.getDate();
     const greg = hd.greg();
-    const iso = greg.toISOString().slice(0, 10);
+    const iso = localIsoDate(greg);
+    // "Coming up" means strictly future — today's event is already here.
+    if (iso <= todayIso) continue;
     const he = ev.render('he');
     const key = `${iso}|${he}`;
     if (seen.has(key)) continue;
@@ -291,7 +301,7 @@ export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
     return {
       he: stripNikud(chag.render('he')),
       en: chag.render('en'),
-      date: nextDay.greg().toISOString().slice(0, 10),
+      date: localIsoDate(nextDay.greg()),
       candles: fmtTime(ce.eventTime, community.tz),
       havdalah: hav ? fmtTime(hav.eventTime, community.tz) : null,
     };
