@@ -71,6 +71,15 @@ export const translations = {
     donateCopied: '✓ הועתק!',
     donateCopyText: (b, br, acc) => `בנק ${b}, סניף ${br}, חשבון ${acc}`,
     close: 'סגירה',
+    fastSubtitle: (weekday, hdate) => `יום ${weekday}, ${hdate}`,
+    fastSunsetStart: 'שקיעה ותחילת הצום',
+    fastArvitNight: (name) => `ערבית של ליל ${name}`,
+    fastShacharit: 'שחרית',
+    fastMincha: 'מנחה (עם טלית ותפילין)',
+    fastEnd: 'ערבית וסיום הצום',
+    fastEndHavdalah: 'ערבית וסיום הצום, הבדלה על הכוס',
+    fastDawnStart: 'עלות השחר ותחילת הצום',
+    fastEndsPlain: 'סיום הצום',
     zmanimTitle: 'זמני היום (שבת)',
     z_alot: 'עלות השחר', z_misheyakir: 'משיכיר', z_netz: 'נץ החמה',
     z_sofShma: 'סוף זמן ק״ש', z_sofTfilla: 'סוף זמן תפילה', z_chatzot: 'חצות היום',
@@ -117,6 +126,15 @@ export const translations = {
     donateCopied: '✓ Copied!',
     donateCopyText: (b, br, acc) => `Bank ${b}, Branch ${br}, Account ${acc}`,
     close: 'Close',
+    fastSubtitle: (weekday, hdate) => `${weekday} · ${hdate}`,
+    fastSunsetStart: 'Sunset — fast begins',
+    fastArvitNight: (name) => `Arvit — ${name} evening`,
+    fastShacharit: 'Shacharit',
+    fastMincha: 'Mincha (with tallit & tefillin)',
+    fastEnd: 'Arvit — fast ends',
+    fastEndHavdalah: 'Arvit — fast ends, Havdalah',
+    fastDawnStart: 'Dawn — fast begins',
+    fastEndsPlain: 'Fast ends',
     zmanimTitle: 'Daily zmanim (Shabbat)',
     z_alot: 'Dawn (Alot)', z_misheyakir: 'Misheyakir', z_netz: 'Sunrise (Netz)',
     z_sofShma: 'Latest Shema', z_sofTfilla: 'Latest Shacharit', z_chatzot: 'Midday (Chatzot)',
@@ -163,6 +181,15 @@ export const translations = {
     donateCopied: '✓ Copié !',
     donateCopyText: (b, br, acc) => `Banque ${b}, Agence ${br}, Compte ${acc}`,
     close: 'Fermer',
+    fastSubtitle: (weekday, hdate) => `${weekday} · ${hdate}`,
+    fastSunsetStart: 'Coucher du soleil — début du jeûne',
+    fastArvitNight: (name) => `Arvit — veillée de ${name}`,
+    fastShacharit: "Cha'harit",
+    fastMincha: "Min'ha (avec talit et téfilines)",
+    fastEnd: 'Arvit — fin du jeûne',
+    fastEndHavdalah: 'Arvit — fin du jeûne, Havdala',
+    fastDawnStart: 'Aube — début du jeûne',
+    fastEndsPlain: 'Fin du jeûne',
     zmanimTitle: 'Zmanim du jour (Chabbat)',
     z_alot: 'Aube (Alot)', z_misheyakir: 'Misheyakir', z_netz: 'Lever (Netz)',
     z_sofShma: 'Chéma limite', z_sofTfilla: 'Amida limite', z_chatzot: 'Midi (Hatsot)',
@@ -175,6 +202,11 @@ export const translations = {
 // The parsha name shown in the title, per language.
 export function parshaName(lang, data) {
   return lang === 'he' ? data.parsha : (data.parsha_en || data.parsha);
+}
+
+// Weekday display name for a given English weekday key.
+export function weekdayName(lang, weekdayEn) {
+  return WEEKDAYS[lang]?.[weekdayEn] || weekdayEn;
 }
 
 function monthName(lang, monthEn) {

@@ -14,7 +14,8 @@ import OmerCounter from './components/OmerCounter';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
 import { locationLabel } from './lib/communities';
-import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov, getOmer } from './lib/zmanim';
+import FastDay from './components/FastDay';
+import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov, getOmer, getFastDay } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
@@ -117,6 +118,14 @@ function AppContent() {
     }
   }, [location]);
 
+  const fastDay = useMemo(() => {
+    try {
+      return getFastDay(location);
+    } catch {
+      return null;
+    }
+  }, [location]);
+
   if (!data) {
     return (
       <div className="web-container">
@@ -136,6 +145,7 @@ function AppContent() {
       <YomTovBanner yt={yomTov} zmanim={chagZmanim} />
       <UpcomingDays days={upcoming} />
       <Timeline data={data} />
+      <FastDay fast={fastDay} />
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
       <ActionButtons data={data}>

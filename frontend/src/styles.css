@@ -867,6 +867,15 @@ body {
   margin-bottom: 12px;
 }
 
+.donate-name {
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.98rem;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid #eee5d0;
+  margin-bottom: 4px;
+}
+
 .donate-row {
   display: flex; justify-content: space-between;
   padding: 6px 0; font-size: 0.95rem; color: #555;
@@ -886,6 +895,11 @@ body {
   font-weight: 600;
 }
 .donate-copy:hover { background: var(--gold-soft); }
+
+/* ── Fast-day schedule card ──────────────────────────────────────────── */
+.fast-card .section-header { color: #7a1f1f; }
+.fast-card .section-header::after { background: #b98a2e; }
+.fast-sub { font-weight: 500; font-size: 0.92rem; color: #8a7a55; }
 
 /* ── Yom Tov (next festival) banner ──────────────────────────────────── */
 .yt-banner {

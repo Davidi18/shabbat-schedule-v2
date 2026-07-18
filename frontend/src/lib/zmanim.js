@@ -309,6 +309,83 @@ export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
   return null;
 }
 
+// ── Next fast day (Tisha B'Av / minor fasts) with the community's schedule.
+// The structure mirrors the community's printed Tisha B'Av flyer, but every
+// zman is recomputed for the current year:
+//   Tisha B'Av — fast begins at sunset of erev; Arvit (Eicha) at nightfall
+//   (+~25 min when erev is Shabbat, time to get home); Shacharit 8:00;
+//   Mincha (tallit & tefillin) on the half-hour ~30 min before sunset;
+//   fast ends at nightfall (hebcal's fast-end time, + Havdalah on a Sunday).
+//   Minor fasts — begins at dawn, ends at nightfall.
+// Yom Kippur is excluded (a Yom Tov — covered by the chag banner); so is
+// Ta'anit Bechorot (firstborn only).
+const roundUp5 = (d) => new Date(Math.ceil(d.getTime() / 300000) * 300000);
+const floorHalfHour = (d) => new Date(Math.floor(d.getTime() / 1800000) * 1800000);
+
+export function getFastDay(community, now = new Date(), daysAhead = 7) {
+  const loc = locationOf(community);
+  const start = new Date(now.getTime() - 86400000); // catch a fast already underway
+  const end = new Date(now.getTime() + daysAhead * 86400000);
+  const events = HebrewCalendar.calendar({
+    start, end, location: loc,
+    candlelighting: true, candleLightingMins: community.candleMins,
+    il: community.il, useElevation: !!community.useElevation,
+  });
+
+  const fasts = events.filter((e) => {
+    const f = e.getFlags();
+    if (!(f & (flags.MAJOR_FAST | flags.MINOR_FAST))) return false;
+    if (e.eventTime) return false; // timed "Fast begins/ends" events carry the same flags
+    const d = e.getDesc();
+    return d !== 'Yom Kippur' && d !== "Ta'anit Bechorot" && !d.startsWith('Erev');
+  });
+
+  for (const fast of fasts) {
+    const hd = fast.getDate();
+    const dayGreg = hd.greg();
+    // Timed begin/end events hebcal attaches to this fast (fall back to Zmanim).
+    const tied = (desc) => events.find((e) => e.getDesc() === desc && e.eventTime &&
+      (e.linkedEvent ? e.linkedEvent.getDesc() === fast.getDesc()
+        : Math.abs(e.getDate().abs() - hd.abs()) <= 1));
+    const begins = tied('Fast begins');
+    const ends = tied('Fast ends');
+    const zDay = new Zmanim(loc, dayGreg, !!community.useElevation);
+    const endTime = ends ? ends.eventTime : zDay.tzeit();
+    if (endTime < now) continue; // this fast is over — look further ahead
+
+    const tz = community.tz;
+    const major = !!(fast.getFlags() & flags.MAJOR_FAST);
+    const rows = [];
+
+    if (major) {
+      const erevGreg = hd.add(-1, 'd').greg();
+      const zErev = new Zmanim(loc, erevGreg, !!community.useElevation);
+      rows.push({ key: 'fastSunsetStart', time: fmtTime(begins ? begins.eventTime : zErev.shkiah(), tz) });
+      const afterShabbat = erevGreg.getDay() === 6;
+      const arvit = roundUp5(new Date(zErev.tzeit().getTime() + (afterShabbat ? 25 : 0) * 60000));
+      rows.push({ key: 'fastArvitNight', time: fmtTime(arvit, tz) });
+      rows.push({ key: 'fastShacharit', time: '8:00' });
+      const mincha = floorHalfHour(new Date(zDay.shkiah().getTime() - 30 * 60000));
+      rows.push({ key: 'fastMincha', time: fmtTime(mincha, tz) });
+      rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', time: fmtTime(endTime, tz) });
+    } else {
+      rows.push({ key: 'fastDawnStart', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
+      rows.push({ key: 'fastEndsPlain', time: fmtTime(endTime, tz) });
+    }
+
+    return {
+      he: stripNikud(fast.render('he')),
+      en: fast.render('en'),
+      date: localIsoDate(dayGreg),
+      he_date: `${gematriya(hd.getDate())} ${HEB_MONTHS[hd.getMonthName()] || hd.getMonthName()}`,
+      weekdayEn: EN_WEEKDAYS[dayGreg.getDay()],
+      major,
+      rows,
+    };
+  }
+  return null;
+}
+
 // ── Sefirat HaOmer — the day count during the Omer (Pesach→Shavuot), else null.
 export function getOmer(community, now = new Date()) {
   const loc = locationOf(community);

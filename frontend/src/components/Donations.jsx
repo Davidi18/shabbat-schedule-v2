@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useLang } from '../i18n';
 
 const BANK = { bank: '52', branch: '185', account: '579985' };
+// Registered account name — shown verbatim in every language (bank transfers
+// must use the exact Hebrew name).
+const ACCOUNT_NAME = 'בית הכנסת האשכנזי שלב ג׳ הר חומה';
 const PAYBOX_URL = 'https://links.payboxapp.com/iQMAfniSKUb';
 
 // Donations: a button in the action row that opens a small dialog with the
@@ -20,7 +23,7 @@ export default function Donations() {
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(t('donateCopyText', BANK.bank, BANK.branch, BANK.account));
+      await navigator.clipboard.writeText(`${ACCOUNT_NAME}, ${t('donateCopyText', BANK.bank, BANK.branch, BANK.account)}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* clipboard unavailable — details are visible anyway */ }
@@ -45,6 +48,7 @@ export default function Donations() {
             <div className="donate-divider">{t('donateBank')}</div>
 
             <div className="donate-rows">
+              <div className="donate-name" dir="rtl" lang="he">{ACCOUNT_NAME}</div>
               <div className="donate-row"><span>{t('bankLabel')}</span><b>{BANK.bank}</b></div>
               <div className="donate-row"><span>{t('branchLabel')}</span><b>{BANK.branch}</b></div>
               <div className="donate-row"><span>{t('accountLabel')}</span><b>{BANK.account}</b></div>
