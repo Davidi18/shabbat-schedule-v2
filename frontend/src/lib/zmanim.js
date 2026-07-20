@@ -391,6 +391,8 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       weekdayEn: EN_WEEKDAYS[dayGreg.getDay()],
       major,
       rows,
+      // Exact instant the fast ends — the card hides itself past this moment.
+      end_at: endTime.toISOString(),
     };
   }
   return null;

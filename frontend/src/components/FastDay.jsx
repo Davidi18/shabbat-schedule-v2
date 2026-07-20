@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useLang, weekdayName } from '../i18n';
 
 const LOCALE = { he: 'he-IL', en: 'en-GB', fr: 'fr-FR' };
@@ -14,7 +15,16 @@ function shortDate(iso, lang) {
 // community's customary structure. Included in the print flyer.
 export default function FastDay({ fast }) {
   const { t, lang } = useLang();
+
+  // Re-check every minute so a tab left open drops the card once the fast ends.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   if (!fast || !fast.rows?.length) return null;
+  if (fast.end_at && new Date(fast.end_at) <= now) return null;
 
   const name = lang === 'he' ? fast.he : fast.en;
   const weekday = weekdayName(lang, fast.weekdayEn);
