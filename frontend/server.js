@@ -32,14 +32,34 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
-function readContent() {
-  try {
-    if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch { /* fall through to seed */ }
+function readSeed() {
   try {
     if (fs.existsSync(SEED_FILE)) return JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
   } catch { /* ignore */ }
   return {};
+}
+
+function readContent() {
+  try {
+    if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch { /* fall through to seed */ }
+  return readSeed();
+}
+
+// Weekly fields are written for a specific Shabbat and expire after it; the
+// save stamps `saved_for` with that Shabbat's date. Once it passes, these
+// fields fall back to the bundled defaults (shiur topic returns to its
+// default, description/messages/kidush go empty). is_summer persists.
+const WEEKLY = ['description', 'shiur_topic', 'messages', 'kidush'];
+
+function effectiveContent() {
+  const content = readContent();
+  const week = upcomingShabbatKey();
+  if (!content.saved_for || content.saved_for < week) {
+    const seed = readSeed();
+    for (const k of WEEKLY) content[k] = seed[k] ?? '';
+  }
+  return content;
 }
 
 function writeContent(obj) {
@@ -127,7 +147,7 @@ const server = http.createServer(async (req, res) => {
   const url = (req.url || '/').split('?')[0];
 
   if (url === '/api/content' && req.method === 'GET') {
-    return sendJSON(res, 200, readContent());
+    return sendJSON(res, 200, effectiveContent());
   }
 
   if (url === '/api/dvar' && req.method === 'GET') {
@@ -149,9 +169,10 @@ const server = http.createServer(async (req, res) => {
       // password (e.g. Hebrew) works — headers can't carry chars outside latin1.
       const { _key, ...incoming } = JSON.parse(await readBody(req) || '{}');
       if (!ADMIN_KEY || _key !== ADMIN_KEY) return sendJSON(res, 401, { error: 'unauthorized' });
-      const current = readContent();
+      const current = effectiveContent();
       const next = { ...current };
       for (const k of EDITABLE) if (k in incoming) next[k] = incoming[k];
+      next.saved_for = upcomingShabbatKey(); // weekly fields are for this Shabbat
       writeContent(next);
       return sendJSON(res, 200, { ok: true, content: next });
     } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
