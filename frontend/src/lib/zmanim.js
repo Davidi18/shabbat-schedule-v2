@@ -314,13 +314,16 @@ export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
 // zman is recomputed for the current year:
 //   Tisha B'Av — fast begins at sunset of erev; Arvit (Eicha) at nightfall
 //   (+~25 min when erev is Shabbat, time to get home); Shacharit 8:00;
-//   Mincha (tallit & tefillin) on the half-hour ~30 min before sunset;
-//   fast ends at nightfall (hebcal's fast-end time, + Havdalah on a Sunday).
-//   Minor fasts — begins at dawn, ends at nightfall.
+//   Mincha 20 min before the fast begins (rounded down to :05).
+//   All fasts — Mincha 35 min before sunset (rounded down to :05; with
+//   tallit & tefillin on 9 Av); Arvit and fast end together at sunset + 25
+//   (rounded up to the minute; Havdalah wording on a Sunday).
+//   Minor fasts begin at dawn and have no eve-Arvit or fixed Shacharit.
 // Yom Kippur is excluded (a Yom Tov — covered by the chag banner); so is
 // Ta'anit Bechorot (firstborn only).
 const roundUp5 = (d) => new Date(Math.ceil(d.getTime() / 300000) * 300000);
-const floorHalfHour = (d) => new Date(Math.floor(d.getTime() / 1800000) * 1800000);
+const floor5 = (d) => new Date(Math.floor(d.getTime() / 300000) * 300000);
+const addMin = (d, m) => new Date(d.getTime() + m * 60000);
 
 export function getFastDay(community, now = new Date(), daysAhead = 7) {
   const loc = locationOf(community);
@@ -348,9 +351,11 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       (e.linkedEvent ? e.linkedEvent.getDesc() === fast.getDesc()
         : Math.abs(e.getDate().abs() - hd.abs()) <= 1));
     const begins = tied('Fast begins');
-    const ends = tied('Fast ends');
     const zDay = new Zmanim(loc, dayGreg, !!community.useElevation);
-    const endTime = ends ? ends.eventTime : zDay.tzeit();
+    const sunsetDay = zDay.shkiah();
+    // Arvit + fast end together: sunset + 25 (reproduces the community's
+    // flyers year over year; fmtTime truncates the seconds).
+    const endTime = addMin(sunsetDay, 25);
     if (endTime < now) continue; // this fast is over — look further ahead
 
     const tz = community.tz;
@@ -360,18 +365,23 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     if (major) {
       const erevGreg = hd.add(-1, 'd').greg();
       const zErev = new Zmanim(loc, erevGreg, !!community.useElevation);
-      rows.push({ key: 'fastSunsetStart', time: fmtTime(begins ? begins.eventTime : zErev.shkiah(), tz) });
+      const sunsetErev = begins ? begins.eventTime : zErev.shkiah();
+      // Mincha ~20 min before the fast begins.
+      rows.push({ key: 'fastMinchaPlain', time: fmtTime(floor5(addMin(sunsetErev, -20)), tz) });
+      rows.push({ key: 'fastSunsetStart', time: fmtTime(sunsetErev, tz) });
+      // Arvit (Eicha) shortly after sunset; after Shabbat wait for nightfall +25.
       const afterShabbat = erevGreg.getDay() === 6;
-      const arvit = roundUp5(new Date(zErev.tzeit().getTime() + (afterShabbat ? 25 : 0) * 60000));
+      const arvit = afterShabbat
+        ? roundUp5(addMin(zErev.tzeit(), 25))
+        : roundUp5(addMin(sunsetErev, 15));
       rows.push({ key: 'fastArvitNight', time: fmtTime(arvit, tz) });
       rows.push({ key: 'fastShacharit', time: '8:00' });
-      const mincha = floorHalfHour(new Date(zDay.shkiah().getTime() - 30 * 60000));
-      rows.push({ key: 'fastMincha', time: fmtTime(mincha, tz) });
-      rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', time: fmtTime(endTime, tz) });
     } else {
       rows.push({ key: 'fastDawnStart', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
-      rows.push({ key: 'fastEndsPlain', time: fmtTime(endTime, tz) });
     }
+    // Mincha ~35 min before sunset, on a :05 mark (tallit & tefillin on 9 Av).
+    rows.push({ key: major ? 'fastMincha' : 'fastMinchaPlain', time: fmtTime(floor5(addMin(sunsetDay, -35)), tz) });
+    rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', time: fmtTime(endTime, tz) });
 
     return {
       he: stripNikud(fast.render('he')),

@@ -136,6 +136,10 @@ function AppContent() {
     );
   }
 
+  // Chronology: a fast that falls before the upcoming Shabbat is shown above
+  // the Shabbat timeline; otherwise below it.
+  const fastBeforeShabbat = !!(fastDay && data.shabbat_date && fastDay.date < data.shabbat_date);
+
   return (
     <div className="web-container">
       <Header data={data} />
@@ -144,8 +148,9 @@ function AppContent() {
       <OmerCounter omer={omer} />
       <YomTovBanner yt={yomTov} zmanim={chagZmanim} />
       <UpcomingDays days={upcoming} />
+      {fastBeforeShabbat && <FastDay fast={fastDay} />}
       <Timeline data={data} />
-      <FastDay fast={fastDay} />
+      {!fastBeforeShabbat && <FastDay fast={fastDay} />}
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
       <ActionButtons data={data}>
