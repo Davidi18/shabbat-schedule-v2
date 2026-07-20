@@ -901,6 +901,16 @@ body {
 .fast-card .section-header::after { background: #b98a2e; }
 .fast-sub { font-weight: 500; font-size: 0.92rem; color: #8a7a55; }
 
+.fast-card .tl-section + .tl-section { margin-top: 14px; }
+
+.fast-day-head {
+  margin: 10px 0 6px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--primary);
+  opacity: 0.85;
+}
+
 /* ── Yom Tov (next festival) banner ──────────────────────────────────── */
 .yt-banner {
   display: flex; align-items: center; gap: 14px;

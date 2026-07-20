@@ -61,9 +61,11 @@ function AppContent() {
       if (content.is_summer !== null && content.is_summer !== undefined) {
         merged.is_summer = content.is_summer;
       }
-      // A gabbai-written description overrides the computed one (שבת מברכין…).
+      // A gabbai-written description overrides the computed one (שבת נחמו,
+      // שבת מברכין…); the flag tells i18n to show it verbatim, untranslated.
       if (content.description && content.description.trim()) {
         merged.description = content.description.trim();
+        merged.description_manual = true;
       }
       // Weekly automatic dvar torah wins over any stale saved/bundled text.
       if (dvar?.dvar_torah) {

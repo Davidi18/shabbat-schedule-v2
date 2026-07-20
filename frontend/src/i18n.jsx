@@ -71,7 +71,8 @@ export const translations = {
     donateCopied: '✓ הועתק!',
     donateCopyText: (b, br, acc) => `בנק ${b}, סניף ${br}, חשבון ${acc}`,
     close: 'סגירה',
-    fastSubtitle: (weekday, hdate) => `יום ${weekday}, ${hdate}`,
+    fastErevSection: (wd) => (wd === 'שבת' ? 'ערב הצום · שבת' : `ערב הצום · יום ${wd}`),
+    fastDaySection: (wd) => `יום הצום · יום ${wd}`,
     fastSunsetStart: 'שקיעה ותחילת הצום',
     fastArvitNight: (name) => `ערבית של ליל ${name}`,
     fastShacharit: 'שחרית',
@@ -126,7 +127,8 @@ export const translations = {
     donateCopied: '✓ Copied!',
     donateCopyText: (b, br, acc) => `Bank ${b}, Branch ${br}, Account ${acc}`,
     close: 'Close',
-    fastSubtitle: (weekday, hdate) => `${weekday} · ${hdate}`,
+    fastErevSection: (wd) => `Eve of the fast · ${wd}`,
+    fastDaySection: (wd) => `Fast day · ${wd}`,
     fastSunsetStart: 'Sunset — fast begins',
     fastArvitNight: (name) => `Arvit — ${name} evening`,
     fastShacharit: 'Shacharit',
@@ -181,7 +183,8 @@ export const translations = {
     donateCopied: '✓ Copié !',
     donateCopyText: (b, br, acc) => `Banque ${b}, Agence ${br}, Compte ${acc}`,
     close: 'Fermer',
-    fastSubtitle: (weekday, hdate) => `${weekday} · ${hdate}`,
+    fastErevSection: (wd) => `Veille du jeûne · ${wd}`,
+    fastDaySection: (wd) => `Jour du jeûne · ${wd}`,
     fastSunsetStart: 'Coucher du soleil — début du jeûne',
     fastArvitNight: (name) => `Arvit — veillée de ${name}`,
     fastShacharit: "Cha'harit",
@@ -214,17 +217,28 @@ function monthName(lang, monthEn) {
 }
 
 // Sub-title: auto "שבת מברכין חודש X" gets translated; manual text is shown as-is.
-export function descriptionText(lang, data) {
-  const desc = (data.description || '').trim();
-  if (lang === 'he') return desc;
-  // Only the auto-generated "שבת מברכין חודש X" line gets translated; a
-  // custom gabbai-written description is shown verbatim in every language.
-  const isAutoMevarchim = desc.startsWith('שבת מברכין');
-  if (!isAutoMevarchim) return desc;
+function mevarchimText(lang, data) {
   const monthEn = data.molad_parts?.month_en;
   const month = monthEn ? monthName(lang, monthEn) : '';
   if (lang === 'en') return month ? `Shabbat Mevarchim — Chodesh ${month}` : 'Shabbat Mevarchim';
   return month ? `Chabbat Mevarkhim — 'Hodech ${month}` : 'Chabbat Mevarkhim';
+}
+
+export function descriptionText(lang, data) {
+  const desc = (data.description || '').trim();
+  // Hebrew shows the computed line as-is; a gabbai-written description is
+  // shown verbatim in every language.
+  if (lang === 'he' || data.description_manual) return desc;
+  // Rebuild the auto parts per language: special Shabbat name + mevarchim.
+  const parts = [];
+  if (data.special_shabbat_en || data.special_shabbat_he) {
+    parts.push(data.special_shabbat_en || data.special_shabbat_he);
+  }
+  if (data.mevarchim) parts.push(mevarchimText(lang, data));
+  if (parts.length) return parts.join(' · ');
+  // Fallback for older data shapes: translate the auto-mevarchim Hebrew line.
+  if (!desc.startsWith('שבת מברכין')) return desc;
+  return mevarchimText(lang, data);
 }
 
 // Molad line; Hebrew uses the pre-formatted string from data.json,

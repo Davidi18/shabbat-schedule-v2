@@ -173,7 +173,19 @@ export function getShabbatData(community, now = new Date()) {
 
   const mev = findMevarchim(satHD);
   const moladInfo = mev ? buildMolad(mev) : { molad: '', molad_parts: null };
-  const description = mev ? `שבת מברכין חודש ${mev.monthHe}` : '';
+
+  // Special Shabbat from the calendar (שבת נחמו, שבת הגדול, שקלים…), shown as
+  // the subtitle; combined with Shabbat Mevarchim when both apply.
+  const specialEvt = events.find(
+    (e) => (e.getFlags() & flags.SPECIAL_SHABBAT) && sameGregDay(e.getDate().greg(), satGreg),
+  );
+  const special_shabbat_he = specialEvt ? stripNikud(specialEvt.render('he')) : '';
+  const special_shabbat_en = specialEvt ? specialEvt.render('en') : '';
+
+  const descParts = [];
+  if (special_shabbat_he) descParts.push(special_shabbat_he);
+  if (mev) descParts.push(`שבת מברכין חודש ${mev.monthHe}`);
+  const description = descParts.join(' · ');
 
   // Civil (YYYY-MM-DD) date of Shabbat/Saturday in the location's timezone.
   const satCivil = new Date(target.eventTime).toLocaleDateString('en-CA', { timeZone: community.tz });
@@ -182,6 +194,8 @@ export function getShabbatData(community, now = new Date()) {
     parsha,
     parsha_en,
     description,
+    special_shabbat_he,
+    special_shabbat_en,
     molad: moladInfo.molad,
     molad_parts: moladInfo.molad_parts,
     mevarchim: !!mev,
@@ -362,26 +376,28 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     const major = !!(fast.getFlags() & flags.MAJOR_FAST);
     const rows = [];
 
+    let erevWeekdayEn = null;
     if (major) {
       const erevGreg = hd.add(-1, 'd').greg();
+      erevWeekdayEn = EN_WEEKDAYS[erevGreg.getDay()];
       const zErev = new Zmanim(loc, erevGreg, !!community.useElevation);
       const sunsetErev = begins ? begins.eventTime : zErev.shkiah();
       // Mincha ~20 min before the fast begins.
-      rows.push({ key: 'fastMinchaPlain', time: fmtTime(floor5(addMin(sunsetErev, -20)), tz) });
-      rows.push({ key: 'fastSunsetStart', time: fmtTime(sunsetErev, tz) });
+      rows.push({ key: 'fastMinchaPlain', day: 'erev', time: fmtTime(floor5(addMin(sunsetErev, -20)), tz) });
+      rows.push({ key: 'fastSunsetStart', day: 'erev', time: fmtTime(sunsetErev, tz) });
       // Arvit (Eicha) shortly after sunset; after Shabbat wait for nightfall +25.
       const afterShabbat = erevGreg.getDay() === 6;
       const arvit = afterShabbat
         ? roundUp5(addMin(zErev.tzeit(), 25))
         : roundUp5(addMin(sunsetErev, 15));
-      rows.push({ key: 'fastArvitNight', time: fmtTime(arvit, tz) });
-      rows.push({ key: 'fastShacharit', time: '8:00' });
+      rows.push({ key: 'fastArvitNight', day: 'erev', time: fmtTime(arvit, tz) });
+      rows.push({ key: 'fastShacharit', day: 'day', time: '8:00' });
     } else {
-      rows.push({ key: 'fastDawnStart', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
+      rows.push({ key: 'fastDawnStart', day: 'day', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
     }
     // Mincha ~35 min before sunset, on a :05 mark (tallit & tefillin on 9 Av).
-    rows.push({ key: major ? 'fastMincha' : 'fastMinchaPlain', time: fmtTime(floor5(addMin(sunsetDay, -35)), tz) });
-    rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', time: fmtTime(endTime, tz) });
+    rows.push({ key: major ? 'fastMincha' : 'fastMinchaPlain', day: 'day', time: fmtTime(floor5(addMin(sunsetDay, -35)), tz) });
+    rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', day: 'day', time: fmtTime(endTime, tz) });
 
     return {
       he: stripNikud(fast.render('he')),
@@ -389,6 +405,7 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       date: localIsoDate(dayGreg),
       he_date: `${gematriya(hd.getDate())} ${HEB_MONTHS[hd.getMonthName()] || hd.getMonthName()}`,
       weekdayEn: EN_WEEKDAYS[dayGreg.getDay()],
+      erev_weekday_en: erevWeekdayEn,
       major,
       rows,
       // Exact instant the fast ends — the card hides itself past this moment.

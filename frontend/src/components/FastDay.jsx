@@ -10,9 +10,11 @@ function shortDate(iso, lang) {
 }
 
 // Upcoming fast-day schedule (Tisha B'Av, minor fasts) — appears automatically
-// in the week before the fast and disappears once it ends. Times come from
-// lib/zmanim.js getFastDay: zmanim computed for this year, prayer times per the
-// community's customary structure. Included in the print flyer.
+// in the week before the fast and disappears the moment it ends. Times come
+// from lib/zmanim.js getFastDay: zmanim computed for this year, prayer times
+// per the community's customary structure. The eve and the fast day itself are
+// rendered as separate labeled sections so the two days aren't confused.
+// Included in the print flyer.
 export default function FastDay({ fast }) {
   const { t, lang } = useLang();
 
@@ -27,23 +29,33 @@ export default function FastDay({ fast }) {
   if (fast.end_at && new Date(fast.end_at) <= now) return null;
 
   const name = lang === 'he' ? fast.he : fast.en;
-  const weekday = weekdayName(lang, fast.weekdayEn);
-  const subtitle = lang === 'he'
-    ? t('fastSubtitle', weekday, fast.he_date)
-    : t('fastSubtitle', weekday, shortDate(fast.date, lang));
+  const hdate = lang === 'he' ? fast.he_date : shortDate(fast.date, lang);
+  const erevRows = fast.rows.filter((r) => r.day === 'erev');
+  const dayRows = fast.rows.filter((r) => r.day !== 'erev');
+
+  const renderRows = (rows) => (
+    <div className="tl-items">
+      {rows.map((row) => (
+        <div key={row.key} className="tl-item">
+          <span className="time">{row.time}</span>
+          <span className="desc">{t(row.key, name)}</span>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="timeline-card fast-card">
+      <h3 className="section-header">{name} <span className="fast-sub">· {hdate}</span></h3>
+      {erevRows.length > 0 && (
+        <section className="tl-section">
+          <h4 className="fast-day-head">{t('fastErevSection', weekdayName(lang, fast.erev_weekday_en))}</h4>
+          {renderRows(erevRows)}
+        </section>
+      )}
       <section className="tl-section">
-        <h3 className="section-header">{name} <span className="fast-sub">· {subtitle}</span></h3>
-        <div className="tl-items">
-          {fast.rows.map((row) => (
-            <div key={row.key} className="tl-item">
-              <span className="time">{row.time}</span>
-              <span className="desc">{t(row.key, name)}</span>
-            </div>
-          ))}
-        </div>
+        <h4 className="fast-day-head">{t('fastDaySection', weekdayName(lang, fast.weekdayEn))}</h4>
+        {renderRows(dayRows)}
       </section>
     </div>
   );
