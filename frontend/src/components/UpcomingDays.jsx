@@ -19,7 +19,8 @@ function weekdayLabel(lang, weekdayEn) {
 export default function UpcomingDays({ days }) {
   const { t, lang } = useLang();
   if (!days || !days.length) return null;
-  const items = days.slice(0, 6);
+  // Capped so the chips stay legible when they share one row on a phone.
+  const items = days.slice(0, 4);
 
   return (
     <section className="upcoming" aria-label={t('upcoming')}>
