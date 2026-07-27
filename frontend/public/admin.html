@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>ניהול · זמני השבת</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     :root { --bg:#f4f1ea; --card:#fff; --ink:#2b2b45; --muted:#8b8397; --line:#e6e0d3; --gold:#b98a2e; --primary:#1a1a2e; }
     * { box-sizing: border-box; }
@@ -41,6 +41,26 @@
     .status.success { background:#eaf7ee; color:#1f7a3d; }
     .status.error { background:#fdecec; color:#b02121; }
     .brand { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:8px; }
+    .btn-print { background:#fff; border:1.5px solid var(--gold); color:#8a6d12; margin-top:12px; }
+    .btn-print:disabled { opacity:.45; cursor:default; }
+
+    /* The מי שברך sheet: hidden on screen, and the only thing that reaches the
+       printer. Kept in-page (rather than a popup window) so it prints offline
+       and isn't swallowed by a popup blocker. */
+    #print-sheet { display:none; }
+    @media print {
+      body { padding:0; background:#fff; }
+      body > *:not(#print-sheet) { display:none !important; }
+      #print-sheet { display:block; text-align:center; color:#1a1a2e; }
+      @page { margin:16mm; }
+      .ps-logo { height:110px; width:auto; margin-bottom:10px; }
+      .ps-title { font-family:'Frank Ruhl Libre',serif; font-size:30pt; font-weight:700; margin:0 0 4px; }
+      .ps-rule { width:60%; margin:10px auto 22px; border:0; border-top:2px solid var(--gold); }
+      .ps-body { font-family:'Frank Ruhl Libre',serif; font-size:17pt; line-height:2.05; text-align:justify; text-align-last:center; margin:0 auto; max-width:16cm; }
+      .ps-body p { margin:0 0 14pt; }
+      .ps-names { font-weight:700; unicode-bidi:plaintext; }
+      .ps-foot { margin-top:26px; font-size:11pt; color:#6b6480; }
+    }
   </style>
 </head>
 <body>
@@ -81,12 +101,13 @@
 
     <div class="card">
       <div class="field" style="margin-bottom:0">
-        <label>רשימת חולים לתפילה <span class="hint">(נשמרת לאורך זמן — לא מתנקה אחרי שבת. הוסף שם ולחץ +, או הסר בלחיצה על ✕)</span></label>
+        <label>רשימת חולים לתפילה <span class="hint">(נשמרת לאורך זמן — לא מתנקה אחרי שבת. הוסף שם ולחץ +, או הסר בלחיצה על ✕. הרשימה אינה מוצגת באתר — היא לשימוש הגבאי ולהדפסה)</span></label>
         <div class="add-row">
           <input type="text" id="f-cholim" placeholder="שם החולה (למשל: יוסף בן שרה)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCholim();}" />
           <button type="button" class="add-btn" onclick="addCholim()" aria-label="הוסף">+</button>
         </div>
         <ul class="chip-list" id="cholim-list"></ul>
+        <button type="button" class="btn btn-print" id="print-btn" onclick="printCholim()">🖨️ הדפסת "מי שברך" לחולים</button>
       </div>
     </div>
 
@@ -107,6 +128,19 @@
   </div>
 
   <div class="brand">קהילת אורות ישראל 🦾</div>
+</div>
+
+<!-- Printable מי שברך sheet. Names are injected before window.print(). -->
+<div id="print-sheet">
+  <img class="ps-logo" src="/logo.jpg" alt="" />
+  <div class="ps-title">מִי שֶׁבֵּרַךְ לַחוֹלִים</div>
+  <hr class="ps-rule" />
+  <div class="ps-body">
+    <p>מִי שֶׁבֵּרַךְ אֲבוֹתֵֽינוּ אַבְרָהָם יִצְחָק וְיַעֲקֹב מֹשֶׁה וְאַהֲרֹן דָּוִד וּשְׁלֹמֹה, הוּא יְבָרֵךְ וִירַפֵּא אֶת הַחוֹלִים <span class="ps-names" id="ps-names"></span>. הַקָּדוֹשׁ בָּרוּךְ הוּא יִמָּלֵּא רַחֲמִים עֲלֵיהֶם לְהַחֲלִימָם וּלְרַפֹּאתָם לְהַחֲזִיקָם וּלְהַחֲיוֹתָם, וְיִשְׁלַח לָהֶם מְהֵרָה רְפוּאָה שְׁלֵמָה מִן הַשָּׁמַֽיִם לְכׇל אֵבָרֵיהֶם וּלְכׇל גִּידֵיהֶם בְּתוֹךְ שְׁאָר חוֹלֵי יִשְׂרָאֵל, רְפוּאַת הַנֶּֽפֶשׁ וּרְפוּאַת הַגּוּף,</p>
+    <p>שַׁבָּת הִיא מִלִּזְעֹק וּרְפוּאָה קְרוֹבָה לָבֹא,</p>
+    <p>הַשְׁתָּא בַּעֲגָלָא וּבִזְמַן קָרִיב, וְנֹאמַר אָמֵן.</p>
+  </div>
+  <div class="ps-foot">בית הכנסת האשכנזי שלב ג׳ הר חומה · קהילת אורות ישראל</div>
 </div>
 
 <script data-cfasync="false">
@@ -134,6 +168,15 @@
       li.appendChild(btn);
       ul.appendChild(li);
     });
+    $('print-btn').disabled = cholim.length === 0;
+  }
+
+  // Print the מי שברך with the current list read into it. Uses the list as it
+  // appears on screen, so a name can be printed before it is saved.
+  function printCholim() {
+    if (!cholim.length) return;
+    $('ps-names').textContent = cholim.join(' וְאֶת ');
+    window.print();
   }
 
   function addCholim() {

@@ -902,48 +902,6 @@ body {
 }
 .donate-copy:hover { background: var(--gold-soft); }
 
-/* ── Prayer for the sick (רשימת חולים לתפילה) ─────────────────────────── */
-.cholim-card {
-  background: #fff;
-  border: 1px solid #e6e0d3;
-  border-top: 3px solid var(--gold);
-  border-radius: 16px;
-  padding: 16px 20px;
-  box-shadow: var(--card-shadow);
-  text-align: center;
-}
-.cholim-title {
-  font-family: var(--serif);
-  color: var(--primary);
-  font-size: 1.1rem;
-  margin: 0 0 10px;
-}
-.cholim-names {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 10px;
-}
-.cholim-name {
-  background: var(--gold-soft);
-  border: 1px solid #e3d3a3;
-  color: #6b5310;
-  border-radius: 999px;
-  padding: 4px 14px;
-  font-weight: 600;
-  font-size: 0.98rem;
-  unicode-bidi: plaintext;
-}
-.cholim-foot {
-  margin-top: 12px;
-  color: #8a7a55;
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
 /* ── Fast-day schedule card ──────────────────────────────────────────── */
 .fast-card .section-header { color: #7a1f1f; }
 .fast-card .section-header::after { background: #b98a2e; }

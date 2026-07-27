@@ -15,7 +15,6 @@ import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
 import { locationLabel } from './lib/communities';
 import FastDay from './components/FastDay';
-import CholimCard from './components/CholimCard';
 import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov, getOmer, getFastDay } from './lib/zmanim';
 import curated from './data/curated.json';
 
@@ -178,7 +177,6 @@ function AppContent() {
       {!fastBeforeShabbat && <FastDay fast={fastDay} />}
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
-      <CholimCard names={data.cholim} />
       <ActionButtons data={data}>
         <ShareImage data={data} />
         <Donations />
