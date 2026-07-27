@@ -570,6 +570,7 @@ body {
     .dvar-torah-container,
     .lang-toggle,
     .donate-overlay,
+    .zmanim-panel,
     .loader {
         display: none !important;
     }
@@ -726,18 +727,20 @@ body {
   letter-spacing: 0.04em; margin: 0 6px 8px; opacity: 0.9;
 }
 .up-orn { color: #c9a227; }
+/* Wrap the chips (centered) so nothing is ever clipped on narrow screens,
+   instead of a horizontal scroll that cut the first item in RTL. */
 .upcoming-strip {
-  display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
-  scrollbar-width: none; max-width: 100%;
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 8px; padding: 2px; max-width: 100%;
 }
-.upcoming-strip::-webkit-scrollbar { display: none; }
 .up-chip {
-  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
-  gap: 2px; padding: 8px 14px; border-radius: 14px;
+  flex: 0 1 auto; display: flex; flex-direction: column; align-items: center;
+  gap: 1px; padding: 8px 14px; border-radius: 14px;
   background: #fff; border: 1px solid #ece7d6;
   box-shadow: 0 1px 3px rgba(20, 20, 50, 0.05);
 }
 .up-name { font-size: 0.9rem; font-weight: 700; color: #2b2b45; white-space: nowrap; }
+.up-weekday { font-size: 0.72rem; font-weight: 600; color: #9a92ab; white-space: nowrap; }
 .up-date {
   font-size: 0.8rem; color: #7c7490; font-weight: 700; white-space: nowrap;
   display: flex; flex-direction: column; align-items: center; gap: 1px;
@@ -895,6 +898,48 @@ body {
   font-weight: 600;
 }
 .donate-copy:hover { background: var(--gold-soft); }
+
+/* ── Prayer for the sick (רשימת חולים לתפילה) ─────────────────────────── */
+.cholim-card {
+  background: #fff;
+  border: 1px solid #e6e0d3;
+  border-top: 3px solid var(--gold);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+.cholim-title {
+  font-family: var(--serif);
+  color: var(--primary);
+  font-size: 1.1rem;
+  margin: 0 0 10px;
+}
+.cholim-names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 10px;
+}
+.cholim-name {
+  background: var(--gold-soft);
+  border: 1px solid #e3d3a3;
+  color: #6b5310;
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-weight: 600;
+  font-size: 0.98rem;
+  unicode-bidi: plaintext;
+}
+.cholim-foot {
+  margin-top: 12px;
+  color: #8a7a55;
+  font-size: 0.85rem;
+  font-style: italic;
+}
 
 /* ── Fast-day schedule card ──────────────────────────────────────────── */
 .fast-card .section-header { color: #7a1f1f; }

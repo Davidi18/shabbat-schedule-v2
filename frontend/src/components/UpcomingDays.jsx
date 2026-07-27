@@ -1,4 +1,4 @@
-import { useLang } from '../i18n';
+import { useLang, weekdayName } from '../i18n';
 
 const LOCALE = { he: 'he-IL', en: 'en-GB', fr: 'fr-FR' };
 
@@ -6,6 +6,12 @@ function shortDate(iso, lang) {
   return new Date(`${iso}T12:00:00`).toLocaleDateString(LOCALE[lang] || 'he-IL', {
     day: 'numeric', month: 'numeric',
   });
+}
+
+// e.g. "יום שלישי" / "שבת" (he), "Tuesday" (en/fr).
+function weekdayLabel(lang, weekdayEn) {
+  const wd = weekdayName(lang, weekdayEn);
+  return lang === 'he' && wd !== 'שבת' ? `יום ${wd}` : wd;
 }
 
 // A quiet "coming up" strip: holidays / Rosh Chodesh / fasts / special Shabbatot
@@ -27,6 +33,7 @@ export default function UpcomingDays({ days }) {
             className={`up-chip${d.isChag ? ' up-chag' : ''}${d.isFast ? ' up-fast' : ''}`}
           >
             <span className="up-name">{lang === 'he' ? d.he : d.en}</span>
+            <span className="up-weekday">{weekdayLabel(lang, d.weekdayEn)}</span>
             <span className="up-date">
               {lang === 'he' && d.he_date
                 ? <>{d.he_date}<span className="up-date-greg">{shortDate(d.date, lang)}</span></>

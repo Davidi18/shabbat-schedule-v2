@@ -28,6 +28,13 @@
     .btn-primary { background:var(--gold); color:#fff; }
     .btn-primary:disabled { opacity:.55; cursor:default; }
     .btn-ghost { background:transparent; color:var(--muted); font-weight:500; font-size:0.85rem; }
+    .add-row { display:flex; gap:8px; }
+    .add-row input { flex:1; }
+    .add-btn { flex:0 0 auto; width:46px; border:none; border-radius:10px; background:var(--primary); color:#fff; font-size:1.4rem; font-weight:700; cursor:pointer; line-height:1; }
+    .chip-list { list-style:none; margin:10px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+    .chip-list:empty { display:none; }
+    .chip { display:inline-flex; align-items:center; gap:8px; background:#f3ead1; border:1px solid #e3d3a3; color:#6b5310; border-radius:999px; padding:5px 6px 5px 14px; font-size:0.92rem; font-weight:600; }
+    .chip button { border:none; background:#e3d3a3; color:#6b5310; width:22px; height:22px; border-radius:50%; cursor:pointer; font-size:0.95rem; line-height:1; }
     .status { margin-top:12px; padding:11px 13px; border-radius:10px; font-size:0.9rem; display:none; }
     .status.show { display:block; }
     .status.loading { background:#eef1f8; color:#3a4a7a; }
@@ -73,6 +80,17 @@
     </div>
 
     <div class="card">
+      <div class="field" style="margin-bottom:0">
+        <label>רשימת חולים לתפילה <span class="hint">(נשמרת לאורך זמן — לא מתנקה אחרי שבת. הוסף שם ולחץ +, או הסר בלחיצה על ✕)</span></label>
+        <div class="add-row">
+          <input type="text" id="f-cholim" placeholder="שם החולה (למשל: יוסף בן שרה)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCholim();}" />
+          <button type="button" class="add-btn" onclick="addCholim()" aria-label="הוסף">+</button>
+        </div>
+        <ul class="chip-list" id="cholim-list"></ul>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="field">
         <label>שעון קיץ <span class="hint">(אוטומטי מזהה לבד; שנה רק אם צריך לכפות)</span></label>
         <div class="toggle" id="summer-toggle">
@@ -93,10 +111,40 @@
 
 <script data-cfasync="false">
   let summerValue = null;
+  let cholim = [];
   const $ = (id) => document.getElementById(id);
   const key = () => localStorage.getItem('admin_key') || '';
 
   function status(el, msg, type) { const e = $(el); e.className = 'status show ' + type; e.innerText = msg; }
+
+  function renderCholim() {
+    const ul = $('cholim-list');
+    ul.innerHTML = '';
+    cholim.forEach((name, i) => {
+      const li = document.createElement('li');
+      li.className = 'chip';
+      const span = document.createElement('span');
+      span.textContent = name;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'הסר');
+      btn.textContent = '✕';
+      btn.onclick = () => { cholim.splice(i, 1); renderCholim(); };
+      li.appendChild(span);
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  function addCholim() {
+    const inp = $('f-cholim');
+    const name = inp.value.trim();
+    if (!name) return;
+    cholim.push(name);
+    inp.value = '';
+    inp.focus();
+    renderCholim();
+  }
   function setSummer(v) {
     summerValue = v;
     document.querySelectorAll('#summer-toggle button').forEach((b) => b.classList.toggle('active', String(b.dataset.val) === String(v)));
@@ -109,6 +157,8 @@
     $('f-shiur').value = c.shiur_topic || '';
     $('f-messages').value = c.messages || '';
     $('f-kidush').value = c.kidush || '';
+    cholim = Array.isArray(c.cholim) ? c.cholim.slice() : [];
+    renderCholim();
     setSummer(c.is_summer ?? null);
   }
 
@@ -145,6 +195,7 @@
       shiur_topic: v('f-shiur'),
       messages: v('f-messages'),
       kidush: v('f-kidush'),
+      cholim: cholim,
       is_summer: summerValue,
     };
     $('save-btn').disabled = true;

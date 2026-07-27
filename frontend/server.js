@@ -69,7 +69,14 @@ function writeContent(obj) {
 
 // Only these fields are gabbai-editable; everything else is computed live.
 // (dvar_torah is no longer editable — it rotates automatically via /api/dvar.)
-const EDITABLE = ['shiur_topic', 'messages', 'kidush', 'description', 'is_summer'];
+const EDITABLE = ['shiur_topic', 'messages', 'kidush', 'description', 'is_summer', 'cholim'];
+
+// Normalize the prayer-for-the-sick list to an array of trimmed, non-empty
+// strings (capped) — it arrives from the admin page as a JSON array.
+function cleanCholim(v) {
+  if (!Array.isArray(v)) return [];
+  return v.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 100);
+}
 
 // ── Weekly automatic dvar torah ─────────────────────────────────────────
 // Cached on the data volume so Sefaria is hit at most once per week (per
@@ -171,7 +178,10 @@ const server = http.createServer(async (req, res) => {
       if (!ADMIN_KEY || _key !== ADMIN_KEY) return sendJSON(res, 401, { error: 'unauthorized' });
       const current = effectiveContent();
       const next = { ...current };
-      for (const k of EDITABLE) if (k in incoming) next[k] = incoming[k];
+      for (const k of EDITABLE) {
+        if (!(k in incoming)) continue;
+        next[k] = k === 'cholim' ? cleanCholim(incoming[k]) : incoming[k];
+      }
       next.saved_for = upcomingShabbatKey(); // weekly fields are for this Shabbat
       writeContent(next);
       return sendJSON(res, 200, { ok: true, content: next });

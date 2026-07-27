@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
+// Provider + hook co-located with the translation tables (same convention as
+// location.jsx).
 import { createContext, useContext, useEffect, useState } from 'react';
 
 export const LANGS = ['he', 'en', 'fr'];
@@ -58,6 +61,8 @@ export const translations = {
     remind: '🔔 תזכורת להדלקת נרות',
     install: '📲 התקן אפליקציה',
     upcoming: 'בקרוב',
+    cholimTitle: 'רשימת חולים לתפילה',
+    cholimFoot: 'לרפואה שלמה בתוך שאר חולי ישראל',
     shareImg: '📸 שיתוף כתמונה',
     shareImgBusy: '⏳ מכין תמונה…',
     donate: '💝 תרומה לבית הכנסת',
@@ -114,6 +119,8 @@ export const translations = {
     remind: '🔔 Candle-lighting reminder',
     install: '📲 Install app',
     upcoming: 'Coming up',
+    cholimTitle: 'Prayer for the sick',
+    cholimFoot: 'For a full recovery among all of Israel',
     shareImg: '📸 Share as image',
     shareImgBusy: '⏳ Preparing…',
     donate: '💝 Donate',
@@ -170,6 +177,8 @@ export const translations = {
     remind: '🔔 Rappel allumage',
     install: '📲 Installer l\'app',
     upcoming: 'À venir',
+    cholimTitle: 'Prière pour les malades',
+    cholimFoot: 'Pour une guérison complète parmi tout Israël',
     shareImg: '📸 Partager en image',
     shareImgBusy: '⏳ Préparation…',
     donate: '💝 Faire un don',

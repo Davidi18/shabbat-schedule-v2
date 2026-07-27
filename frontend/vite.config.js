@@ -44,7 +44,27 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2}'],
         cleanupOutdatedCaches: true,
+        // Take over open tabs as soon as a new build is cached, so a phone
+        // that resumes the PWA doesn't paint last week's bundle.
+        clientsClaim: true,
+        skipWaiting: true,
+        // /admin.html is a real page, not part of the SPA — never answer it
+        // (or the content API) from the cached index.html shell.
+        navigateFallbackDenylist: [/^\/admin\.html/, /^\/api\//],
         runtimeCaching: [
+          {
+            // Gabbai content + weekly halacha: always try the network first so
+            // the page shows current data, but fall back to the last response
+            // when offline (the prayer list stays visible either way).
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'content-api',
+              networkTimeoutSeconds: 5,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             // Cache Google Fonts so typography survives offline.
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
