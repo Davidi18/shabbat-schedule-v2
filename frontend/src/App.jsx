@@ -9,13 +9,12 @@ import ShareImage from './components/ShareImage';
 import Donations from './components/Donations';
 import UpcomingDays from './components/UpcomingDays';
 import ZmanimPanel from './components/ZmanimPanel';
-import YomTovBanner from './components/YomTovBanner';
 import OmerCounter from './components/OmerCounter';
 import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
 import { locationLabel } from './lib/communities';
 import FastDay from './components/FastDay';
-import { getShabbatData, getUpcomingDays, getDayZmanim, getNextYomTov, getOmer, getFastDay } from './lib/zmanim';
+import { getShabbatData, getUpcomingDays, getDayZmanim, getOmer, getFastDay } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
@@ -105,14 +104,6 @@ function AppContent() {
     }
   }, [location, now]);
 
-  const yomTov = useMemo(() => {
-    try {
-      return getNextYomTov(location, now);
-    } catch {
-      return null;
-    }
-  }, [location, now]);
-
   const zmanim = useMemo(() => {
     try {
       const day = data?.shabbat_date ? new Date(`${data.shabbat_date}T12:00:00`) : new Date();
@@ -121,14 +112,6 @@ function AppContent() {
       return [];
     }
   }, [location, data]);
-
-  const chagZmanim = useMemo(() => {
-    try {
-      return yomTov?.date ? getDayZmanim(location, new Date(`${yomTov.date}T12:00:00`)) : [];
-    } catch {
-      return [];
-    }
-  }, [location, yomTov]);
 
   const omer = useMemo(() => {
     try {
@@ -170,7 +153,6 @@ function AppContent() {
       <Countdown data={data} />
       <MessagesCard messages={data.messages} />
       <OmerCounter omer={omer} />
-      <YomTovBanner yt={yomTov} zmanim={chagZmanim} />
       <UpcomingDays days={upcomingDays} />
       {fastBeforeShabbat && <FastDay fast={fastDay} />}
       <Timeline data={data} />

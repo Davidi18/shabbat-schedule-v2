@@ -917,18 +917,6 @@ body {
   opacity: 0.85;
 }
 
-/* ── Yom Tov (next festival) banner ──────────────────────────────────── */
-.yt-banner {
-  display: flex; align-items: center; gap: 14px;
-  background: linear-gradient(135deg, #2a1f56, #3a2b74);
-  border: 1px solid #5847a0; border-radius: 16px;
-  padding: 14px 18px; color: #fff; box-shadow: var(--card-shadow);
-}
-.yt-ico { font-size: 1.8rem; }
-.yt-label { font-weight: 700; font-size: 1.05rem; color: #f0e6c8; }
-.yt-times { font-size: 0.98rem; color: #d9def2; margin-top: 2px; }
-.yt-times b { color: #ffd97a; unicode-bidi: plaintext; }
-
 /* ── Daily zmanim panel ──────────────────────────────────────────────── */
 .zmanim-panel {
   background: #fff; border: 1px solid #ece7d6; border-radius: 16px;
@@ -956,43 +944,6 @@ body {
   font-weight: 700; color: var(--primary); unicode-bidi: plaintext;
   background: #eef4ff; padding: 1px 9px; border-radius: 7px;
 }
-
-/* ── Full chag card (chag mode) ──────────────────────────────────────── */
-.yt-card {
-  background: linear-gradient(135deg, #2a1f56, #3a2b74);
-  border: 1px solid #5847a0; border-radius: 18px;
-  padding: 16px 18px; color: #fff; box-shadow: var(--card-shadow);
-}
-.yt-head { display: flex; align-items: center; gap: 14px; }
-.yt-card .yt-ico { font-size: 2rem; }
-.yt-card .yt-label { font-size: 0.85rem; color: #cbd0ea; font-weight: 600; letter-spacing: 0.03em; }
-.yt-name { font-size: 1.5rem; font-weight: 800; color: #f0e6c8; }
-.yt-card .yt-times {
-  display: flex; gap: 10px; margin-top: 14px;
-}
-.yt-time {
-  flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 12px; padding: 10px 12px; text-align: center;
-}
-.yt-time-label { display: block; font-size: 0.82rem; color: #cbd0ea; }
-.yt-time-val { display: block; font-size: 1.5rem; font-weight: 800; color: #ffd97a; unicode-bidi: plaintext; }
-.yt-zmanim { margin-top: 12px; }
-.yt-zmanim summary {
-  list-style: none; cursor: pointer; font-weight: 700; color: #e9d9a6;
-  display: flex; justify-content: space-between; align-items: center; padding: 6px 2px;
-}
-.yt-zmanim summary::-webkit-details-marker { display: none; }
-.yt-caret { transition: transform 0.2s ease; }
-.yt-zmanim[open] .yt-caret { transform: rotate(180deg); }
-.yt-zmanim-list {
-  margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px;
-}
-@media (max-width: 460px) { .yt-zmanim-list { grid-template-columns: 1fr; } }
-.yt-zmanim-row {
-  display: flex; justify-content: space-between; padding: 5px 0;
-  border-bottom: 1px dashed rgba(255,255,255,0.14); font-size: 0.95rem; color: #dfe3f5;
-}
-.yt-zmanim-time { color: #ffd97a; font-weight: 700; unicode-bidi: plaintext; }
 
 /* ── Omer counter + times transparency note ──────────────────────────── */
 .omer-chip {

@@ -294,35 +294,6 @@ export function getDayZmanim(community, date = new Date()) {
   ];
 }
 
-// ── Next Yom Tov (festival) heads-up — the chag the community prepares for.
-// Returns the upcoming festival's entry candle-lighting + its ending havdalah,
-// or null when no festival is near. Regular Shabbatot are skipped.
-export function getNextYomTov(community, now = new Date(), daysAhead = 40) {
-  const loc = locationOf(community);
-  const end = new Date(now.getTime() + daysAhead * 86400000);
-  const events = HebrewCalendar.calendar({
-    start: now, end, location: loc,
-    candlelighting: true, candleLightingMins: community.candleMins,
-    il: community.il, useElevation: !!community.useElevation,
-  });
-
-  const candles = events.filter((e) => e.getDesc() === 'Candle lighting' && e.eventTime && e.eventTime >= now);
-  for (const ce of candles) {
-    const nextDay = ce.getDate().add(1, 'd');
-    const chag = events.find((e) => (e.getFlags() & flags.CHAG) && sameGregDay(e.getDate().greg(), nextDay.greg()));
-    if (!chag) continue; // this candle-lighting is a regular Shabbat, not a festival
-    const hav = events.find((e) => e.getDesc() === 'Havdalah' && e.eventTime && e.eventTime > ce.eventTime);
-    return {
-      he: stripNikud(chag.render('he')),
-      en: chag.render('en'),
-      date: localIsoDate(nextDay.greg()),
-      candles: fmtTime(ce.eventTime, community.tz),
-      havdalah: hav ? fmtTime(hav.eventTime, community.tz) : null,
-    };
-  }
-  return null;
-}
-
 // ── Next fast day (Tisha B'Av / minor fasts) with the community's schedule.
 // The structure mirrors the community's printed Tisha B'Av flyer, but every
 // zman is recomputed for the current year:
