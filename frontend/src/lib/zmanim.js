@@ -23,7 +23,14 @@ const HEB_MONTHS = {
   Adar: 'אדר', 'Adar I': 'אדר א׳', 'Adar II': 'אדר ב׳',
 };
 
-const stripNikud = (s) => (s || '').replace(/[֑-ׇ]/g, '');
+// hebcal joins compound names with a maqaf — כִּי־תֵצֵא, אַחֲרֵי־מוֹת. The maqaf
+// (U+05BE) sits inside the nikud/cantillation range we strip, so it has to
+// become a space first or the words run together ("כיתצא").
+const stripNikud = (s) => (s || '')
+  .replace(/־/g, ' ')
+  .replace(/[֑-ׇ]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
 const pad2 = (n) => String(n).padStart(2, '0');
 
 function locationOf(c) {
