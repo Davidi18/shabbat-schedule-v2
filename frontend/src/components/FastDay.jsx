@@ -33,14 +33,18 @@ export default function FastDay({ fast }) {
   const erevRows = fast.rows.filter((r) => r.day === 'erev');
   const dayRows = fast.rows.filter((r) => r.day !== 'erev');
 
+  // A row with no time (Tefilla Zaka) is a standing custom, not an appointment —
+  // it reads as a note rather than a line on the clock.
   const renderRows = (rows) => (
     <div className="tl-items">
-      {rows.map((row) => (
+      {rows.map((row) => (row.note ? (
+        <div key={row.key} className="note-text">{t(row.key, name)}</div>
+      ) : (
         <div key={row.key} className="tl-item">
           <span className="time">{row.time}</span>
           <span className="desc">{t(row.key, name)}</span>
         </div>
-      ))}
+      )))}
     </div>
   );
 
@@ -49,12 +53,16 @@ export default function FastDay({ fast }) {
       <h3 className="section-header">{name} <span className="fast-sub">· {hdate}</span></h3>
       {erevRows.length > 0 && (
         <section className="tl-section">
-          <h4 className="fast-day-head">{t('fastErevSection', weekdayName(lang, fast.erev_weekday_en))}</h4>
+          <h4 className="fast-day-head">
+            {t(fast.erev_section_key || 'fastErevSection', weekdayName(lang, fast.erev_weekday_en))}
+          </h4>
           {renderRows(erevRows)}
         </section>
       )}
       <section className="tl-section">
-        <h4 className="fast-day-head">{t('fastDaySection', weekdayName(lang, fast.weekdayEn))}</h4>
+        <h4 className="fast-day-head">
+          {t(fast.day_section_key || 'fastDaySection', weekdayName(lang, fast.weekdayEn))}
+        </h4>
         {renderRows(dayRows)}
       </section>
     </div>

@@ -129,6 +129,28 @@ function buildMolad(mev) {
   return { molad: line, molad_parts };
 }
 
+// Kiddush Levana is said on the first motzaei Shabbat of the month that falls
+// after "three days from the molad". Exactly one motzaei Shabbat can land in
+// the seven days following that instant, so this window alone already picks the
+// FIRST one — and it is comfortably inside the sof zman (14d 18h) too.
+// Tishrei and Av are the exceptions: the community says it at motzaei Yom
+// Kippur and motzaei Tisha B'Av instead (see getFastDay).
+function isKidushLevanaMotzash(satHD, havdalah) {
+  const night = satHD.add(1, 'd'); // Hebrew date of Saturday night
+  const monthEn = night.getMonthName();
+  if (monthEn === 'Tishrei' || monthEn === 'Av') return false;
+  const start = kidushLevanaStart(night);
+  return start <= havdalah && start > new Date(havdalah.getTime() - 7 * 86400000);
+}
+
+// Earliest time for Kiddush Levana (3 days from the molad) of the month the
+// given Hebrew date falls in.
+function kidushLevanaStart(hd) {
+  return new Date(
+    new Molad(hd.getFullYear(), hd.getMonth()).getTchilasZmanKidushLevana3Days().epochMilliseconds,
+  );
+}
+
 /**
  * Compute the upcoming Shabbat's live times for a community.
  * @param {object} community - a profile from lib/communities.js
@@ -208,6 +230,8 @@ export function getShabbatData(community, now = new Date()) {
     mevarchim: !!mev,
     candles,
     havdalah,
+    // Is Kiddush Levana said this motzaei Shabbat? (changes the Arvit label)
+    kidush_levana: isKidushLevanaMotzash(satHD, target.eventTime),
     // Precise UTC instants (ISO) for calendar reminders / countdown.
     candles_dt: candleEvt ? candleEvt.eventTime.toISOString() : null,
     havdalah_dt: target.eventTime.toISOString(),
@@ -301,8 +325,8 @@ export function getDayZmanim(community, date = new Date()) {
   ];
 }
 
-// ── Next fast day (Tisha B'Av / minor fasts) with the community's schedule.
-// The structure mirrors the community's printed Tisha B'Av flyer, but every
+// ── Next fast day (Yom Kippur / Tisha B'Av / minor fasts) with the community's
+// schedule. The structure mirrors the community's printed flyers, but every
 // zman is recomputed for the current year:
 //   Tisha B'Av — fast begins at sunset of erev; Arvit (Eicha) at nightfall
 //   (+~25 min when erev is Shabbat, time to get home); Shacharit 8:00;
@@ -311,11 +335,33 @@ export function getDayZmanim(community, date = new Date()) {
 //   tallit & tefillin on 9 Av); Arvit and fast end together at sunset + 25
 //   (rounded up to the minute; Havdalah wording on a Sunday).
 //   Minor fasts begin at dawn and have no eve-Arvit or fixed Shacharit.
-// Yom Kippur is excluded (a Yom Tov — covered by the chag banner); so is
-// Ta'anit Bechorot (firstborn only).
+//   Yom Kippur — its own schedule, see ykRows below.
+// Ta'anit Bechorot is excluded (firstborn only).
 const roundUp5 = (d) => new Date(Math.ceil(d.getTime() / 300000) * 300000);
+const roundUp15 = (d) => new Date(Math.ceil(d.getTime() / 900000) * 900000);
 const floor5 = (d) => new Date(Math.floor(d.getTime() / 300000) * 300000);
 const addMin = (d, m) => new Date(d.getTime() + m * 60000);
+
+// Yom Kippur, calibrated against the community's flyer and re-derived from this
+// year's zmanim (offsets chosen so last year's printed sheet comes out exactly).
+// Selichot, Mincha Gedola and Tefilla Zaka are fixed shul times, not zmanim.
+function ykRows(candleEvt, zErev, zDay, tz) {
+  const shkiaDay = zDay.shkiah();
+  return [
+    { key: 'ykSelichot', day: 'erev', time: '7:00' },
+    { key: 'ykMinchaGedola', day: 'erev', time: '13:15' },
+    { key: 'ykCandles', day: 'erev', time: fmtTime(candleEvt.eventTime, tz) },
+    { key: 'ykTefilaZaka', day: 'erev', note: true },
+    { key: 'ykKolNidrei', day: 'erev', time: fmtTime(roundUp15(candleEvt.eventTime), tz) },
+    { key: 'fastSunsetStart', day: 'erev', time: fmtTime(zErev.shkiah(), tz) },
+    // Before 10am, printed without a leading zero to sit beside "7:00"/"13:15".
+    { key: 'ykShacharit', day: 'day', time: fmtTime(floor5(addMin(zDay.sunrise(), -34)), tz).replace(/^0/, '') },
+    { key: 'ykMincha', day: 'day', time: fmtTime(floor5(addMin(shkiaDay, -130)), tz) },
+    { key: 'ykNeila', day: 'day', time: fmtTime(floor5(addMin(shkiaDay, -55)), tz) },
+    { key: 'ykArvitKidushLevana', day: 'day', time: fmtTime(roundUp5(addMin(shkiaDay, 22)), tz) },
+    { key: 'ykFastEnd', day: 'day', time: fmtTime(zDay.tzeit(), tz) },
+  ];
+}
 
 export function getFastDay(community, now = new Date(), daysAhead = 7) {
   const loc = locationOf(community);
@@ -332,7 +378,7 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     if (!(f & (flags.MAJOR_FAST | flags.MINOR_FAST))) return false;
     if (e.eventTime) return false; // timed "Fast begins/ends" events carry the same flags
     const d = e.getDesc();
-    return d !== 'Yom Kippur' && d !== "Ta'anit Bechorot" && !d.startsWith('Erev');
+    return d !== "Ta'anit Bechorot" && !d.startsWith('Erev');
   });
 
   for (const fast of fasts) {
@@ -345,9 +391,11 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     const begins = tied('Fast begins');
     const zDay = new Zmanim(loc, dayGreg, !!community.useElevation);
     const sunsetDay = zDay.shkiah();
+    const isYomKippur = fast.getDesc() === 'Yom Kippur';
     // Arvit + fast end together: sunset + 25 (reproduces the community's
-    // flyers year over year; fmtTime truncates the seconds).
-    const endTime = addMin(sunsetDay, 25);
+    // flyers year over year; fmtTime truncates the seconds). Yom Kippur is
+    // a Yom Tov and ends at nightfall proper.
+    const endTime = isYomKippur ? zDay.tzeit() : addMin(sunsetDay, 25);
     if (endTime < now) continue; // this fast is over — look further ahead
 
     const tz = community.tz;
@@ -355,27 +403,47 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     const rows = [];
 
     let erevWeekdayEn = null;
+    let erevSectionKey = 'fastErevSection';
+    let daySectionKey = 'fastDaySection';
     if (major) {
       const erevGreg = hd.add(-1, 'd').greg();
       erevWeekdayEn = EN_WEEKDAYS[erevGreg.getDay()];
       const zErev = new Zmanim(loc, erevGreg, !!community.useElevation);
-      const sunsetErev = begins ? begins.eventTime : zErev.shkiah();
-      // Mincha ~20 min before the fast begins.
-      rows.push({ key: 'fastMinchaPlain', day: 'erev', time: fmtTime(floor5(addMin(sunsetErev, -20)), tz) });
-      rows.push({ key: 'fastSunsetStart', day: 'erev', time: fmtTime(sunsetErev, tz) });
-      // Arvit (Eicha) shortly after sunset; after Shabbat wait for nightfall +25.
-      const afterShabbat = erevGreg.getDay() === 6;
-      const arvit = afterShabbat
-        ? roundUp5(addMin(zErev.tzeit(), 25))
-        : roundUp5(addMin(sunsetErev, 15));
-      rows.push({ key: 'fastArvitNight', day: 'erev', time: fmtTime(arvit, tz) });
-      rows.push({ key: 'fastShacharit', day: 'day', time: '8:00' });
+      if (isYomKippur) {
+        erevSectionKey = 'ykErevSection';
+        daySectionKey = 'ykDaySection';
+        const candleEvt = events.find((e) => e.getDesc() === 'Candle lighting' && e.eventTime &&
+          sameGregDay(e.getDate().greg(), erevGreg));
+        if (!candleEvt) continue; // no candle lighting → can't build the eve section
+        rows.push(...ykRows(candleEvt, zErev, zDay, tz));
+      } else {
+        const sunsetErev = begins ? begins.eventTime : zErev.shkiah();
+        // Mincha ~20 min before the fast begins.
+        rows.push({ key: 'fastMinchaPlain', day: 'erev', time: fmtTime(floor5(addMin(sunsetErev, -20)), tz) });
+        rows.push({ key: 'fastSunsetStart', day: 'erev', time: fmtTime(sunsetErev, tz) });
+        // Arvit (Eicha) shortly after sunset; after Shabbat wait for nightfall +25.
+        const afterShabbat = erevGreg.getDay() === 6;
+        const arvit = afterShabbat
+          ? roundUp5(addMin(zErev.tzeit(), 25))
+          : roundUp5(addMin(sunsetErev, 15));
+        rows.push({ key: 'fastArvitNight', day: 'erev', time: fmtTime(arvit, tz) });
+        rows.push({ key: 'fastShacharit', day: 'day', time: '8:00' });
+      }
     } else {
       rows.push({ key: 'fastDawnStart', day: 'day', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
     }
-    // Mincha ~35 min before sunset, on a :05 mark (tallit & tefillin on 9 Av).
-    rows.push({ key: major ? 'fastMincha' : 'fastMinchaPlain', day: 'day', time: fmtTime(floor5(addMin(sunsetDay, -35)), tz) });
-    rows.push({ key: dayGreg.getDay() === 0 ? 'fastEndHavdalah' : 'fastEnd', day: 'day', time: fmtTime(endTime, tz) });
+    if (!isYomKippur) {
+      // Mincha ~35 min before sunset, on a :05 mark (tallit & tefillin on 9 Av).
+      rows.push({ key: major ? 'fastMincha' : 'fastMinchaPlain', day: 'day', time: fmtTime(floor5(addMin(sunsetDay, -35)), tz) });
+      // Av says Kiddush Levana at motzaei Tisha B'Av rather than on a motzaei
+      // Shabbat (see isKidushLevanaMotzash) — the zman has always arrived by
+      // then, but check anyway rather than promise it blindly.
+      const kl = fast.getDesc().startsWith("Tish'a B'Av") && kidushLevanaStart(hd) <= endTime;
+      const endKey = dayGreg.getDay() === 0
+        ? (kl ? 'fastEndHavdalahKidushLevana' : 'fastEndHavdalah')
+        : (kl ? 'fastEndKidushLevana' : 'fastEnd');
+      rows.push({ key: endKey, day: 'day', time: fmtTime(endTime, tz) });
+    }
 
     return {
       he: stripNikud(fast.render('he')),
@@ -386,6 +454,9 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       erev_weekday_en: erevWeekdayEn,
       major,
       rows,
+      // Section headings — Yom Kippur names itself instead of "the fast".
+      erev_section_key: erevSectionKey,
+      day_section_key: daySectionKey,
       // Exact instant the fast ends — the card hides itself past this moment.
       end_at: endTime.toISOString(),
     };

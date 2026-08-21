@@ -61,7 +61,7 @@ export default function Timeline({ data }) {
       <section className="tl-section">
         <h3 className="section-header">{t('motzash')}</h3>
         <div className="tl-items">
-          <Item time={arvit} label={t('arvitMotzash')} />
+          <Item time={arvit} label={t(data.kidush_levana ? 'arvitKidushLevana' : 'arvitMotzash')} />
           <Item time={data.havdalah} label={t('havdalah')} icon="✨" iconAnim="anim-stars" highlight />
         </div>
       </section>
