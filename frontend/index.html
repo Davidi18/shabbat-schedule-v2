@@ -8,6 +8,7 @@
          (e.g. ערבית -> "Arabic" instead of "Arvit"). -->
     <meta name="google" content="notranslate" />
     <meta name="theme-color" content="#1a1a2e" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="זמני השבת" />
@@ -20,6 +21,29 @@
     <meta property="og:description" content="זמני כניסת ויציאת שבת, פרשה, תפילות וזמני היום — מדויק לכל מיקום." />
     <meta property="og:image" content="logo.jpg" />
     <meta property="og:locale" content="he_IL" />
+    <!-- The app shell is cached hard (it has to work offline), so a bundle that
+         fails to load once can keep a device on a blank page indefinitely. If
+         a script never loads, drop the caches and reload — once per visit, so
+         a genuinely broken build can't put the page in a reload loop. -->
+    <script data-cfasync="false">
+      window.addEventListener('error', function (e) {
+        var el = e.target;
+        if (!el || el.tagName !== 'SCRIPT' || !el.src) return;
+        try {
+          if (sessionStorage.getItem('shell-recovered')) return;
+          sessionStorage.setItem('shell-recovered', '1');
+        } catch (_) { return; }
+        var jobs = [];
+        if (window.caches) jobs.push(caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+        }));
+        if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }));
+        var reload = function () { location.reload(); };
+        Promise.all(jobs).then(reload, reload);
+      }, true);
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
   </head>

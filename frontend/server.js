@@ -137,12 +137,26 @@ function serveStatic(req, res) {
   // Prevent path traversal outside dist.
   if (!filePath.startsWith(DIST)) { res.writeHead(403); res.end('Forbidden'); return; }
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(DIST, 'index.html'); // SPA fallback
+    // A request for a FILE must 404, never fall back to the SPA shell. A deploy
+    // empties dist and rebuilds it, so a request landing in that window used to
+    // be answered with index.html — HTML, status 200 — under a .js URL. The
+    // browser refuses it ("Expected a JavaScript-or-Wasm module script"), paints
+    // nothing, and the service worker precaches the error page under the bundle's
+    // URL, so that device stays blank long after the deploy finished.
+    if (path.extname(rel)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end('Not found');
+      return;
+    }
+    filePath = path.join(DIST, 'index.html'); // SPA fallback — routes only
   }
   const ext = path.extname(filePath).toLowerCase();
   const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
   const base = path.basename(filePath);
   if (base === 'sw.js' || base === 'index.html') headers['Cache-Control'] = 'no-cache';
+  // Everything under assets/ carries a content hash in its name, so it can be
+  // cached forever — a new build means a new URL.
+  else if (filePath.startsWith(path.join(DIST, 'assets'))) headers['Cache-Control'] = 'public, max-age=31536000, immutable';
   fs.readFile(filePath, (err, buf) => {
     if (err) { res.writeHead(500); res.end('Server error'); return; }
     res.writeHead(200, headers);
