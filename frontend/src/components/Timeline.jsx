@@ -23,7 +23,9 @@ export default function Timeline({ data }) {
   const infoText = data.kidush?.trim()
     ? data.kidush
     : data.shiur_topic?.trim()
-      ? t('shiurNote', data.shiur_topic)
+      // The Rav gives the shiur unless the gabbai says otherwise; when someone
+      // else does, the topic is announced without naming a lecturer.
+      ? t(data.shiur_by_rav === false ? 'shiurNoteNoRav' : 'shiurNote', data.shiur_topic)
       : null;
   const infoIsBold = !!(data.kidush?.trim());
 

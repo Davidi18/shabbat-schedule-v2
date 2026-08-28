@@ -2,6 +2,7 @@
   "_note": "Live, gabbai-editable content. The app fetches this at runtime and merges it over the built-in defaults. Edit via /admin.html (no code needed) — saving there commits this file and the site auto-updates within ~1 minute. Times/parsha/molad are NOT here; they are computed live.",
   "is_summer": null,
   "shiur_topic": "הלכות שבת",
+  "shiur_by_rav": true,
   "kidush": "",
   "messages": "",
   "dvar_torah": "והלבוש השמיט זה לגמרי, ובאמת קולות גדולות הן, ויש על זה קושיות מסוגית הש\"ס, ומרוב הפוסקים לא נראה כן. וגם אין זה סברא כלל דכשיש נר כשר יזכור גם על הפסולים, וגם מ\"ש 'אפילו אצל נרות האחרים' מיותר לגמרי, דהא מיירינן בנרות האחרים. ולכן נראה לי דהכי פירושו, דכשיש נר כשר עומד בחדר שיש נרות פסולים - מותר להשתמש לאורם, דלא יבא להטות מפני שיש לו אור יפה מהכשר, אבל בחדר אחר - אסור. ואחר כך קאמר דדבר שאפשר בלא נר - מותר לעשות אף כשאין נר כשר כלל, וכן נראה לעניות דעתי שיש להורות, ולא להקל ביותר. (וכ\"מ מדברי הא\"ר סק\"ג)",
