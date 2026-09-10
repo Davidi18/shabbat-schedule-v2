@@ -506,7 +506,7 @@ function rhRows(cands, z1, z2, tz, day1IsShabbat, erevIsFriday) {
 
   // Day one.
   rows.push({ key: 'rhShacharit', day: 'day1', time: '7:30' });
-  rows.push({ key: day1IsShabbat ? 'rhKiddushNoShofar' : 'rhKiddush', day: 'day1', note: true });
+  rows.push({ key: day1IsShabbat ? 'rhKiddushNoShofar' : 'rhKiddush', day: 'day1', time: '9:30' });
   if (!day1IsShabbat) {
     rows.push({ key: 'rhTalkBeforeShofar', day: 'day1', note: true });
     rows.push({ key: 'rhShofar', day: 'day1', time: '10:00' });
@@ -522,7 +522,7 @@ function rhRows(cands, z1, z2, tz, day1IsShabbat, erevIsFriday) {
 
   // Day two.
   rows.push({ key: 'rhShacharit', day: 'day2', time: '7:30' });
-  rows.push({ key: 'rhKiddush', day: 'day2', note: true });
+  rows.push({ key: 'rhKiddush', day: 'day2', time: '9:30' });
   rows.push({ key: 'rhShofar', day: 'day2', time: '10:00' });
   rows.push({ key: 'rhShofarExtra', day: 'day2', note: true });
   rows.push({ key: 'rhMincha', day: 'day2', time: at(floor15(addMin(z2.shkiah(), -30))) });
