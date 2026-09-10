@@ -58,7 +58,11 @@
           // replace, so claiming must not trigger a reload.
           var hadController = !!navigator.serviceWorker.controller;
           navigator.serviceWorker.addEventListener('controllerchange', function () {
-            if (!hadController) return;
+            // The first claim of a page that opened with no worker is an
+            // install, not a replacement: adopt it quietly. Reloading here
+            // would reload every first-ever visit; skipping it for good would
+            // leave that tab unable to notice a later build.
+            if (!hadController) { hadController = true; return; }
             try {
               // Once per visit, so a build that somehow keeps claiming can't
               // put the page in a reload loop.
