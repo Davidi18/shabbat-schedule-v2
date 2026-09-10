@@ -596,11 +596,11 @@ body {
     .hero-ornament::after { background: var(--gold); }
 
     .bsd { color: #444; text-shadow: none; font-size: 12px; }
-    .logo-img { height: 46px; background: none; padding: 0; border-radius: 0; }
+    .logo-img { height: 56px; background: none; padding: 0; border-radius: 0; }
 
     .main-title {
         color: var(--primary) !important;
-        font-size: 22pt;
+        font-size: 24pt;
         text-shadow: none;
     }
 
@@ -620,14 +620,14 @@ body {
         font-style: italic;
     }
 
-    .key-times { margin-top: 2mm; gap: 6mm; }
+    .key-times { margin-top: 2.5mm; gap: 7mm; }
     .key-chip {
         background: none;
         border: 1px solid var(--gold);
         color: black;
         backdrop-filter: none;
-        font-size: 10.5pt;
-        padding: 1mm 4mm;
+        font-size: 11.5pt;
+        padding: 1.5mm 5mm;
     }
     .key-time { color: var(--primary); font-weight: 800; }
 
@@ -648,7 +648,7 @@ body {
         box-shadow: none;
         border-radius: 0;
         padding: 0;
-        margin-top: 2.5mm;
+        margin-top: 4mm;
     }
 
     .tl-items {
@@ -663,59 +663,62 @@ body {
 
     .section-header {
         color: var(--primary) !important;
-        font-size: 13pt;
+        font-size: 14pt;
         margin-bottom: 1mm;
     }
 
     .section-header::after { background: var(--gold); }
 
-    .tl-item { padding: 0.35mm 0; }
+    .tl-item { padding: 0.95mm 0; }
 
     .time {
         background: none;
         color: black !important;
-        font-size: 12.5pt;
+        font-size: 13pt;
         font-weight: 800;
         padding: 0;
         min-width: 18mm;
         text-align: start;
     }
 
-    .tl-item.highlight .time { color: var(--primary) !important; background: none; font-size: 12.5pt; }
-    .desc { font-size: 12pt; color: black; font-weight: normal; }
+    .tl-item.highlight .time { color: var(--primary) !important; background: none; font-size: 13pt; }
+    .desc { font-size: 12.5pt; color: black; font-weight: normal; }
     .tl-item.highlight .desc { font-weight: 700; }
 
     .note-text {
         background: none;
         border: none;
-        border-inline-start: 2px solid var(--gold);
         border-radius: 0;
         padding: 0;
-        padding-inline-start: 3mm;
-        margin: 0.9mm 0;
+        margin: 1.1mm 0;
         color: black;
         font-style: italic;
         font-size: 11.5pt;
     }
 
     /* Footer */
-    /* The "coming up" chips are a reference strip, not the subject. */
-    .upcoming { margin: 2mm 0 1mm; padding: 0; }
-    .up-chip { padding: 1mm; font-size: 8.5pt; line-height: 1.25; }
+    /* The chips are for browsing on screen. On the sheet they crowd the
+       schedule that people actually came for, and the space they free is
+       what lets everything else breathe. */
+    .upcoming { display: none !important; }
 
-    .fast-day-head { font-size: 11.5pt; margin: 1.5mm 0 1mm; }
+    .fast-day-head { font-size: 12pt; margin: 2mm 0 1.2mm; }
 
     /* A schedule that spans more than one day runs twice the length of a
        Shabbat one, so its day sections sit side by side and the sheet stays
        a single page. A one-section card (a minor fast) keeps the full width,
        as does the weekly timeline. */
-    .fast-card:has(.tl-section + .tl-section) { column-count: 2; column-gap: 8mm; }
+    .fast-card:has(.tl-section + .tl-section) {
+        column-count: 2;
+        column-gap: 8mm;
+        column-rule: 1px solid #d9d2c0;
+    }
     .fast-card .tl-section { break-inside: avoid; }
     .fast-card .section-header { column-span: all; }
 
     .footer-shabbat {
-        font-size: 13pt;
-        margin-top: 2mm;
+        font-size: 15pt;
+        margin-top: 3mm;
         color: var(--primary);
     }
 }
