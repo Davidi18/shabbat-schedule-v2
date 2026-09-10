@@ -14,7 +14,8 @@ import { LangProvider, useLang } from './i18n';
 import { LocationProvider, useLocation } from './location';
 import { locationLabel } from './lib/communities';
 import FastDay from './components/FastDay';
-import { getShabbatData, getUpcomingDays, getDayZmanim, getOmer, getFastDay } from './lib/zmanim';
+import RoshHashana from './components/RoshHashana';
+import { getShabbatData, getUpcomingDays, getDayZmanim, getOmer, getFastDay, getRoshHashana } from './lib/zmanim';
 import curated from './data/curated.json';
 
 function AppContent() {
@@ -104,14 +105,26 @@ function AppContent() {
     }
   }, [location, now]);
 
+  // Rosh Hashana replaces the weekly Shabbat card while it is upcoming or
+  // under way — a two-day yom tov has no motzaei Shabbat in the middle, so
+  // the ordinary timeline would describe the wrong evening.
+  const rosh = useMemo(() => {
+    try {
+      return getRoshHashana(location, now);
+    } catch {
+      return null;
+    }
+  }, [location, now]);
+
   const zmanim = useMemo(() => {
     try {
-      const day = data?.shabbat_date ? new Date(`${data.shabbat_date}T12:00:00`) : new Date();
+      const key = rosh?.header?.shabbat_date || data?.shabbat_date;
+      const day = key ? new Date(`${key}T12:00:00`) : new Date();
       return getDayZmanim(location, day);
     } catch {
       return [];
     }
-  }, [location, data]);
+  }, [location, data, rosh]);
 
   const omer = useMemo(() => {
     try {
@@ -139,28 +152,48 @@ function AppContent() {
     );
   }
 
+  // Rosh Hashana takes over the weekly card only when it actually swallows the
+  // upcoming Shabbat — as in 5787, whose first day is Shabbat. In a year when
+  // the chag falls midweek the ordinary Shabbat card still applies and the chag
+  // is shown beside it, the way a fast day is.
+  const roshTakesOver = !!(rosh && data.shabbat_date >= rosh.date && data.shabbat_date <= rosh.date2);
+
+  // Then the headline times are the chag's own: candles on erev, and the close
+  // of the second day in place of havdalah.
+  const view = roshTakesOver ? { ...data, ...rosh.header } : data;
+
+  // Chronology, as for a fast: a chag before the Shabbat sits above it.
+  const roshBeforeShabbat = !!(rosh && !roshTakesOver && rosh.date < data.shabbat_date);
+  const roshAfterShabbat = !!(rosh && !roshTakesOver && !roshBeforeShabbat);
+
   // Chronology: a fast that falls before the upcoming Shabbat is shown above
   // the Shabbat timeline; otherwise below it.
-  const fastBeforeShabbat = !!(fastDay && data.shabbat_date && fastDay.date < data.shabbat_date);
+  const fastBeforeShabbat = !!(fastDay && view.shabbat_date && fastDay.date < view.shabbat_date);
 
   // Don't repeat this week's Shabbat in the "coming up" strip — it's the main
   // subject of the page already (e.g. a special Shabbat named in the header).
-  const upcomingDays = upcoming.filter((d) => d.date !== data.shabbat_date);
+  // Both days of Rosh Hashana are dropped, not just the first — the card
+  // below already lays them out hour by hour.
+  const upcomingDays = upcoming.filter(
+    (d) => d.date !== view.shabbat_date && !(rosh && d.date >= rosh.date && d.date <= rosh.date2),
+  );
 
   return (
     <div className="web-container">
-      <Header data={data} />
-      <Countdown data={data} />
+      <Header data={view} />
+      <Countdown data={view} />
       <MessagesCard messages={data.messages} />
       <OmerCounter omer={omer} />
       <UpcomingDays days={upcomingDays} />
       {fastBeforeShabbat && <FastDay fast={fastDay} />}
-      <Timeline data={data} />
+      {roshBeforeShabbat && <RoshHashana rosh={rosh} />}
+      {roshTakesOver ? <RoshHashana rosh={rosh} /> : <Timeline data={data} />}
+      {roshAfterShabbat && <RoshHashana rosh={rosh} />}
       {!fastBeforeShabbat && <FastDay fast={fastDay} />}
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
-      <ActionButtons data={data}>
-        <ShareImage data={data} />
+      <ActionButtons data={view}>
+        <ShareImage data={view} />
         <Donations />
       </ActionButtons>
       <footer className="footer-shabbat">

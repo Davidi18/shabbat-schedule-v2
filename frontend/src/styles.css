@@ -917,6 +917,10 @@ body {
   opacity: 0.85;
 }
 
+/* A chag borrows the fast card's layout but not its mourning colour. */
+.rh-card .section-header { color: var(--primary); }
+.rh-card .section-header::after { background: var(--gold); }
+
 /* ── Daily zmanim panel ──────────────────────────────────────────────── */
 .zmanim-panel {
   background: #fff; border: 1px solid #ece7d6; border-radius: 16px;

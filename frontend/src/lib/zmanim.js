@@ -341,6 +341,7 @@ const roundUp5 = (d) => new Date(Math.ceil(d.getTime() / 300000) * 300000);
 const roundUp15 = (d) => new Date(Math.ceil(d.getTime() / 900000) * 900000);
 const floor5 = (d) => new Date(Math.floor(d.getTime() / 300000) * 300000);
 const addMin = (d, m) => new Date(d.getTime() + m * 60000);
+const floor15 = (d) => new Date(Math.floor(d.getTime() / 900000) * 900000);
 
 // Yom Kippur, calibrated against the community's flyer and re-derived from this
 // year's zmanim (offsets chosen so last year's printed sheet comes out exactly).
@@ -471,4 +472,150 @@ export function getOmer(community, now = new Date()) {
   const o = evs.find((e) => e.getFlags() & flags.OMER_COUNT);
   if (!o) return null;
   return { day: o.omer, he: stripNikud(o.render('he')), en: o.render('en') };
+}
+
+// ── Rosh Hashana ────────────────────────────────────────────────────────
+// A two-day yom tov, so the ordinary Shabbat engine can't describe it: there is
+// no Havdalah on the night between the days (the first day flows straight into
+// the second), and in a year like 5787 the first day IS Shabbat.
+//
+// Prayer times are the community's, calibrated against the printed flyer of
+// 5786 and re-derived from each year's zmanim — every derived row below comes
+// out exactly as that sheet was printed. Shacharit and the shofar are fixed
+// shul times, not zmanim.
+//
+// Shabbat: no shofar is blown and Tashlich is not said on Shabbat, so on a year
+// whose first day is Shabbat those rows move to the second day.
+function rhRows(cands, z1, z2, tz, day1IsShabbat, erevIsFriday) {
+  const rows = [];
+  const at = (d) => fmtTime(d, tz);
+
+  // Erev — Mincha follows the same rule as any erev Shabbat (candles + ~15,
+  // on a :05 mark), which is how the flyer's 18:15 came out of 17:59.
+  rows.push({ key: erevIsFriday ? 'rhCandlesShabbat' : 'rhCandles', day: 'erev', time: at(cands.erev) });
+  rows.push({ key: erevIsFriday ? 'rhMinchaErevShabbat' : 'rhMinchaErev', day: 'erev', time: at(minchaFromCandles(cands.erev)) });
+  if (!erevIsFriday) rows.push({ key: 'rhDrasha', day: 'erev', note: true });
+  rows.push({ key: 'rhArvitYT', day: 'erev', note: true });
+
+  // Day one.
+  rows.push({ key: 'rhShacharit', day: 'day1', time: '7:30' });
+  rows.push({ key: 'rhKiddush', day: 'day1', note: true });
+  if (day1IsShabbat) {
+    rows.push({ key: 'rhNoShofarShabbat', day: 'day1', note: true });
+  } else {
+    rows.push({ key: 'rhTalkBeforeShofar', day: 'day1', note: true });
+    rows.push({ key: 'rhShofar', day: 'day1', time: '10:00' });
+    rows.push({ key: 'rhShofarExtra', day: 'day1', note: true });
+  }
+  rows.push({ key: 'rhMincha', day: 'day1', time: at(floor15(addMin(z1.shkiah(), -30))) });
+  if (!day1IsShabbat) rows.push({ key: 'rhTashlich', day: 'day1', note: true });
+  rows.push({ key: 'rhShiur', day: 'day1', note: true });
+  // Arvit of the second night is set to a quarter-hour mark shortly before
+  // nightfall; candles at home wait for nightfall proper (the engine's event).
+  rows.push({ key: 'rhArvitYT2', day: 'day1', time: at(floor15(addMin(z1.tzeit(), -5))) });
+  rows.push({ key: 'rhCandles2', day: 'day1', time: at(cands.day1) });
+
+  // Day two.
+  rows.push({ key: 'rhShacharit', day: 'day2', time: '7:30' });
+  rows.push({ key: 'rhKiddush', day: 'day2', note: true });
+  rows.push({ key: 'rhShofar', day: 'day2', time: '10:00' });
+  rows.push({ key: 'rhShofarExtra', day: 'day2', note: true });
+  rows.push({ key: 'rhMincha', day: 'day2', time: at(floor15(addMin(z2.shkiah(), -30))) });
+  if (day1IsShabbat) rows.push({ key: 'rhTashlich', day: 'day2', note: true });
+  rows.push({ key: 'rhShiurDay', day: 'day2', note: true });
+  // Motzaei chag follows the site's ordinary motzaei-Shabbat rule.
+  rows.push({ key: 'rhArvitMotzaei', day: 'day2', time: at(roundUp5(addMin(z2.tzeit(), -5))) });
+  rows.push({ key: 'rhChagEnd', day: 'day2', time: at(cands.end) });
+  return rows;
+}
+
+// Erev Mincha: candles + 15 rounded up to :05, pulled back if that overshoots
+// by more than 18 minutes — the same rule utils/timeCalc uses for erev Shabbat.
+function minchaFromCandles(candles) {
+  let m = roundUp5(addMin(candles, 15));
+  if (m - candles > 18 * 60000) m = addMin(m, -5);
+  return new Date(m);
+}
+
+// The upcoming Rosh Hashana, or null. Returned while the chag is still ahead or
+// under way; it disappears of itself once the second day ends.
+export function getRoshHashana(community, now = new Date(), daysAhead = 14) {
+  const loc = locationOf(community);
+  const start = new Date(now.getTime() - 2 * 86400000);
+  const end = new Date(now.getTime() + daysAhead * 86400000);
+  const events = HebrewCalendar.calendar({
+    start, end, location: loc,
+    candlelighting: true,
+    candleLightingMins: community.candleMins,
+    il: community.il,
+    useElevation: !!community.useElevation,
+  });
+
+  // "Rosh Hashana 5787" is the first day; "Rosh Hashana II" the second.
+  const day1Evt = events.find((e) => /^Rosh Hashana \d/.test(e.getDesc()));
+  if (!day1Evt) return null;
+
+  const hd1 = day1Evt.getDate();
+  const day1Greg = hd1.greg();
+  const day2Greg = hd1.add(1, 'd').greg();
+  const erevGreg = hd1.add(-1, 'd').greg();
+
+  const candleOn = (g) => events.find(
+    (e) => e.getDesc() === 'Candle lighting' && e.eventTime && sameGregDay(e.getDate().greg(), g),
+  );
+  const erevCandle = candleOn(erevGreg);
+  const day1Candle = candleOn(day1Greg);
+  const endEvt = events.find(
+    (e) => e.getDesc() === 'Havdalah' && e.eventTime && sameGregDay(e.getDate().greg(), day2Greg),
+  );
+  // Without all three the card would be missing its anchors — say nothing
+  // rather than print a half-built schedule.
+  if (!erevCandle || !day1Candle || !endEvt) return null;
+  if (endEvt.eventTime <= now) return null;
+
+  const tz = community.tz;
+  const useElev = !!community.useElevation;
+  const rows = rhRows(
+    { erev: erevCandle.eventTime, day1: day1Candle.eventTime, end: endEvt.eventTime },
+    new Zmanim(loc, day1Greg, useElev),
+    new Zmanim(loc, day2Greg, useElev),
+    tz,
+    day1Greg.getDay() === 6,
+    erevGreg.getDay() === 5,
+  );
+
+  const civil = (g) => g.toLocaleDateString('en-CA', { timeZone: tz });
+  return {
+    he: 'ראש השנה',
+    en: 'Rosh Hashana',
+    fr: 'Roch Hachana',
+    // "ה׳תשפ״ז" — the year as the flyer prints it.
+    year_he: `ה׳${gematriya(hd1.getFullYear() % 1000)}`,
+    year_num: hd1.getFullYear(),
+    date: civil(day1Greg),
+    date2: civil(day2Greg),
+    he_date: `${gematriya(1)}׳ תשרי`,
+    erev_weekday_en: EN_WEEKDAYS[erevGreg.getDay()],
+    day1_weekday_en: EN_WEEKDAYS[day1Greg.getDay()],
+    day2_weekday_en: EN_WEEKDAYS[day2Greg.getDay()],
+    day1_is_shabbat: day1Greg.getDay() === 6,
+    rows,
+    end_at: endEvt.eventTime.toISOString(),
+    // Fields the header/countdown/share-image read in place of the Shabbat ones.
+    header: {
+      title_key: 'rhMainTitle',
+      title_args: [`ה׳${gematriya(hd1.getFullYear() % 1000)}`, hd1.getFullYear()],
+      end_label_key: 'rhChagEndShort',
+      cd_before_key: 'cdBeforeChag',
+      cd_during_key: 'cdDuringChag',
+      parsha: 'ראש השנה',
+      parsha_en: 'Rosh Hashana',
+      candles: fmtTime(erevCandle.eventTime, tz),
+      candles_dt: erevCandle.eventTime.toISOString(),
+      havdalah: fmtTime(endEvt.eventTime, tz),
+      havdalah_dt: endEvt.eventTime.toISOString(),
+      shabbat_date: civil(day1Greg),
+      hebrew_date: new HDate(new Date(`${civil(day1Greg)}T12:00:00Z`)).renderGematriya(),
+    },
+  };
 }

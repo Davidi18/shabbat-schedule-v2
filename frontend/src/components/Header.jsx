@@ -1,4 +1,4 @@
-import { useLang, parshaName, descriptionText } from '../i18n';
+import { useLang, headlineTitle, descriptionText } from '../i18n';
 import LanguageToggle from './LanguageToggle';
 
 export default function Header({ data }) {
@@ -19,12 +19,12 @@ export default function Header({ data }) {
       </div>
 
       <div className="hero-body">
-        <h1 className="main-title">{t('mainTitle', parshaName(lang, data))}</h1>
+        <h1 className="main-title">{headlineTitle(t, lang, data)}</h1>
         <div className="hero-ornament" aria-hidden="true">✦</div>
         {description && <div className="sub-title">{description}</div>}
         <div className="key-times">
           <span className="key-chip"><span className="anim-candle" aria-hidden="true">🕯️</span> {t('candles')} <b className="key-time">{data.candles}</b></span>
-          <span className="key-chip"><span className="anim-stars" aria-hidden="true">✨</span> {t('havdalah')} <b className="key-time">{data.havdalah}</b></span>
+          <span className="key-chip"><span className="anim-stars" aria-hidden="true">✨</span> {t(data.end_label_key || 'havdalah')} <b className="key-time">{data.havdalah}</b></span>
         </div>
       </div>
     </header>

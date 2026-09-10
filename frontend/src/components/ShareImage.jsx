@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
-import { useLang, parshaName, descriptionText } from '../i18n';
+import { useLang, headlineTitle, descriptionText } from '../i18n';
 import { useLocation } from '../location';
 import { locationLabel } from '../lib/communities';
 
@@ -20,7 +20,7 @@ export default function ShareImage({ data }) {
       const canvas = await html2canvas(cardRef.current, { scale: 2, backgroundColor: null, useCORS: true });
       const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
       const file = new File([blob], 'shabbat-times.png', { type: 'image/png' });
-      const title = `${t('mainTitle', parshaName(lang, data))} · ${locationLabel(location, lang)}`;
+      const title = `${headlineTitle(t, lang, data)} · ${locationLabel(location, lang)}`;
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title });
@@ -55,7 +55,7 @@ export default function ShareImage({ data }) {
           <div className="sc-bsd">בס"ד</div>
           <div className="sc-community">{locationLabel(location, lang)}</div>
           <div className="sc-orn">✦ ✦ ✦</div>
-          <div className="sc-title">{t('mainTitle', parshaName(lang, data))}</div>
+          <div className="sc-title">{headlineTitle(t, lang, data)}</div>
           {description && <div className="sc-sub">{description}</div>}
           <div className="sc-dates">{data.hebrew_date}</div>
 
@@ -68,7 +68,7 @@ export default function ShareImage({ data }) {
             <div className="sc-divider" />
             <div className="sc-time-block">
               <div className="sc-time-ico">✨</div>
-              <div className="sc-time-label">{t('havdalah')}</div>
+              <div className="sc-time-label">{t(data.end_label_key || 'havdalah')}</div>
               <div className="sc-time-val">{data.havdalah}</div>
             </div>
           </div>

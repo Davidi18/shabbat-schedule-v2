@@ -30,6 +30,16 @@ function getShabbatState(candles, havdalah, now) {
   return { mode: 'before', target: atTime(friday, candles) };
 }
 
+// Countdown straight from the precise start/end instants, when present.
+function exactState(data, now) {
+  if (!data.candles_dt || !data.havdalah_dt) return null;
+  const startAt = new Date(data.candles_dt);
+  const endAt = new Date(data.havdalah_dt);
+  if (now < startAt) return { mode: 'before', target: startAt };
+  if (now < endAt) return { mode: 'during', target: endAt };
+  return null;
+}
+
 export default function Countdown({ data }) {
   const { t, lang } = useLang();
   const [now, setNow] = useState(() => new Date());
@@ -41,13 +51,18 @@ export default function Countdown({ data }) {
 
   if (!data.candles || !data.havdalah) return null;
 
-  const { mode, target } = getShabbatState(data.candles, data.havdalah, now);
+  // Exact instants when the engine supplied them — the weekday arithmetic in
+  // getShabbatState assumes Friday-to-Saturday and cannot describe a two-day
+  // yom tov that begins on Friday and ends on Sunday night.
+  const { mode, target } = exactState(data, now) || getShabbatState(data.candles, data.havdalah, now);
   const remaining = target - now;
   if (remaining <= 0) return null;
 
   return (
     <div className="countdown-chip">
-      <span className="cd-label"><span className="anim-candle" aria-hidden="true">🕯️</span> {mode === 'during' ? t('cdDuring') : t('cdBefore')}</span>
+      <span className="cd-label"><span className="anim-candle" aria-hidden="true">🕯️</span> {mode === 'during'
+          ? t(data.cd_during_key || 'cdDuring')
+          : t(data.cd_before_key || 'cdBefore')}</span>
       <span className="cd-value">{formatRemaining(lang, remaining)}</span>
     </div>
   );
