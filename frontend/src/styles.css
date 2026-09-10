@@ -909,12 +909,14 @@ body {
 
 .fast-card .tl-section + .tl-section { margin-top: 14px; }
 
+/* The day headings carry the card: on a multi-day schedule they are what
+   tells you which day a time belongs to, so they read a step above the
+   rows rather than below them. */
 .fast-day-head {
-  margin: 10px 0 6px;
-  font-size: 0.92rem;
+  margin: 14px 0 8px;
+  font-size: 1.06rem;
   font-weight: 700;
   color: var(--primary);
-  opacity: 0.85;
 }
 
 /* A chag borrows the fast card's layout but not its mourning colour. */
