@@ -611,6 +611,7 @@ export function getRoshHashana(community, now = new Date(), daysAhead = 14) {
       title_key: 'rhMainTitle',
       title_args: [`ה׳${gematriya(hd1.getFullYear() % 1000)}`, hd1.getFullYear()],
       end_label_key: 'rhChagEndShort',
+      footer_key: 'footerChag',
       cd_before_key: 'cdBeforeChag',
       cd_during_key: 'cdDuringChag',
       parsha: 'ראש השנה',

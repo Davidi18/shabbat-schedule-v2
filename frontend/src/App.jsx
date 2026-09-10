@@ -197,7 +197,7 @@ function AppContent() {
         <Donations />
       </ActionButtons>
       <footer className="footer-shabbat">
-        <span className="footer-orn">✦</span> {t('footer')} <span className="footer-orn">✦</span>
+        <span className="footer-orn">✦</span> {t(view.footer_key || 'footer')} <span className="footer-orn">✦</span>
       </footer>
       <div className="times-note">
         {t('timesNote', locationLabel(location, lang), location.candleMins)}

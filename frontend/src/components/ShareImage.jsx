@@ -73,7 +73,7 @@ export default function ShareImage({ data }) {
             </div>
           </div>
 
-          <div className="sc-footer">{t('footer')}</div>
+          <div className="sc-footer">{t(data.footer_key || 'footer')}</div>
         </div>
       </div>
     </>
