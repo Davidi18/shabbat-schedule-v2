@@ -393,14 +393,16 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     const zDay = new Zmanim(loc, dayGreg, !!community.useElevation);
     const sunsetDay = zDay.shkiah();
     const isYomKippur = fast.getDesc() === 'Yom Kippur';
-    // Arvit + fast end together: sunset + 25 (reproduces the community's
-    // flyers year over year; fmtTime truncates the seconds). Yom Kippur is
-    // a Yom Tov and ends at nightfall proper.
-    const endTime = isYomKippur ? zDay.tzeit() : addMin(sunsetDay, 25);
+    const isMajor = !!(fast.getFlags() & flags.MAJOR_FAST);
+    // Arvit + fast end together, both reproducing the community's flyers year
+    // over year (fmtTime truncates the seconds). A minor fast is ended more
+    // leniently than Tisha B'Av; Yom Kippur is a Yom Tov and ends at
+    // nightfall proper.
+    const endTime = isYomKippur ? zDay.tzeit() : addMin(sunsetDay, isMajor ? 25 : 14);
     if (endTime < now) continue; // this fast is over — look further ahead
 
     const tz = community.tz;
-    const major = !!(fast.getFlags() & flags.MAJOR_FAST);
+    const major = isMajor;
     const rows = [];
 
     let erevWeekdayEn = null;
@@ -492,17 +494,20 @@ function rhRows(cands, z1, z2, tz, day1IsShabbat, erevIsFriday) {
 
   // Erev — Mincha follows the same rule as any erev Shabbat (candles + ~15,
   // on a :05 mark), which is how the flyer's 18:15 came out of 17:59.
+  rows.push({ key: 'rhSelichot', day: 'erev', time: '6:00' });
   rows.push({ key: erevIsFriday ? 'rhCandlesShabbat' : 'rhCandles', day: 'erev', time: at(cands.erev) });
   rows.push({ key: erevIsFriday ? 'rhMinchaErevShabbat' : 'rhMinchaErev', day: 'erev', time: at(minchaFromCandles(cands.erev)) });
-  if (!erevIsFriday) rows.push({ key: 'rhDrasha', day: 'erev', note: true });
-  rows.push({ key: 'rhArvitYT', day: 'erev', note: true });
+  // On a Friday the Mincha row already says Kabbalat Shabbat and Yom Tov
+  // Arvit, so neither the drasha slot nor a separate Arvit line belongs here.
+  if (!erevIsFriday) {
+    rows.push({ key: 'rhDrasha', day: 'erev', note: true });
+    rows.push({ key: 'rhArvitYT', day: 'erev', note: true });
+  }
 
   // Day one.
   rows.push({ key: 'rhShacharit', day: 'day1', time: '7:30' });
-  rows.push({ key: 'rhKiddush', day: 'day1', note: true });
-  if (day1IsShabbat) {
-    rows.push({ key: 'rhNoShofarShabbat', day: 'day1', note: true });
-  } else {
+  rows.push({ key: day1IsShabbat ? 'rhKiddushNoShofar' : 'rhKiddush', day: 'day1', note: true });
+  if (!day1IsShabbat) {
     rows.push({ key: 'rhTalkBeforeShofar', day: 'day1', note: true });
     rows.push({ key: 'rhShofar', day: 'day1', time: '10:00' });
     rows.push({ key: 'rhShofarExtra', day: 'day1', note: true });
