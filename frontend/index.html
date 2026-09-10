@@ -44,6 +44,42 @@
         Promise.all(jobs).then(reload, reload);
       }, true);
     </script>
+    <!-- Register the service worker ourselves. The generated registration
+         only calls register(): the new worker installs, claims the page and
+         caches the new build, but the document already on screen keeps the
+         old bundle, so every returning visitor saw week-old times for
+         exactly one visit. Reloading on controllerchange closes that gap. -->
+    <script data-cfasync="false">
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          // A controller already present means this page is being served by an
+          // older worker; when a newer one claims it, what we painted is stale.
+          // With no controller this is a first install and there is nothing to
+          // replace, so claiming must not trigger a reload.
+          var hadController = !!navigator.serviceWorker.controller;
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            if (!hadController) return;
+            try {
+              // Once per visit, so a build that somehow keeps claiming can't
+              // put the page in a reload loop.
+              if (sessionStorage.getItem('sw-reloaded')) return;
+              sessionStorage.setItem('sw-reloaded', '1');
+            } catch (_) { return; }
+            location.reload();
+          });
+          navigator.serviceWorker
+            .register('./sw.js', { scope: './', updateViaCache: 'none' })
+            .then(function (reg) {
+              // Phones keep the PWA suspended for days. Re-check on the way
+              // back in, or a resumed app never learns a new build exists.
+              document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') reg.update();
+              });
+            })
+            .catch(function () { /* no service worker: the page still works */ });
+        });
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
   </head>

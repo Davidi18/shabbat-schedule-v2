@@ -21,6 +21,9 @@ export default defineConfig({
     cfAsyncFalse,
     VitePWA({
       registerType: 'autoUpdate',
+      // The generated registration only calls register(). Ours is in
+      // index.html and also reloads the page when a new build takes over.
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'kotel.jpg', 'logo.jpg'],
       manifest: {
         name: 'זמני השבת — אורות ישראל',
