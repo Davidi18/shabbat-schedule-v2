@@ -433,7 +433,15 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
         rows.push({ key: 'fastShacharit', day: 'day', time: '8:00' });
       }
     } else {
-      rows.push({ key: 'fastDawnStart', day: 'day', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz) });
+      // Before 10am, printed without a leading zero, as the flyer prints it
+      // and as every other morning time on the page is written.
+      rows.push({ key: 'fastDawnStart', day: 'day', time: fmtTime(begins ? begins.eventTime : zDay.alotHaShachar(), tz).replace(/^0/, '') });
+      // Tzom Gedaliah alone has a shul minyan in the morning, at a fixed hour
+      // and up in the tent rather than downstairs. The other minor fasts fall
+      // in other seasons and keep no such time.
+      if (fast.getDesc() === 'Tzom Gedaliah') {
+        rows.push({ key: 'fastSelichotChabad', day: 'day', time: '5:45' });
+      }
     }
     if (!isYomKippur) {
       // Mincha ~35 min before sunset, on a :05 mark (tallit & tefillin on 9 Av).
