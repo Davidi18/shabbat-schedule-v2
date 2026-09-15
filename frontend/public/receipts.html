@@ -53,6 +53,16 @@
     .total-label { font-size:0.78rem; color:var(--muted); }
     .total-value { font-size:1.15rem; font-weight:700; font-family:'Frank Ruhl Libre',serif; }
 
+    .period { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+    .period select, .period input {
+      padding:9px 10px; border:1px solid #ddd; border-radius:10px; background:#fff;
+      font-family:'Rubik',sans-serif; font-size:0.9rem; color:var(--ink);
+    }
+    .period select { flex:1; min-width:0; }
+    .period-range { display:none; gap:8px; margin-bottom:12px; }
+    .period-range.show { display:flex; }
+    .period-range input { flex:1; min-width:0; direction:ltr; text-align:right; }
+    .totals-note { font-size:0.78rem; color:var(--muted); margin:-8px 0 16px; text-align:center; }
     .search { margin-bottom:12px; }
     .ledger-row { border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:9px; }
     .ledger-row.is-void { opacity:.55; background:#faf8f3; }
@@ -78,24 +88,25 @@
       #sheet { display:block; color:#1a1a2e; }
       @page { size:A5 landscape; margin:12mm; }
 
-      .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:8mm 10mm; height:100%; }
-      .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:4mm; }
-      .rc-logo { height:22mm; width:auto; }
+      #sheet { break-inside:avoid; page-break-inside:avoid; max-width:148mm; margin:0 auto; }
+      .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:5mm 9mm; position:relative; }
+      .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:3mm; }
+      .rc-logo { height:18mm; width:auto; }
       .rc-org { flex:1; }
       .rc-org-name { font-family:'Frank Ruhl Libre',serif; font-size:19pt; font-weight:700; line-height:1.2; }
       .rc-org-sub { font-size:9.5pt; color:#6b6480; margin-top:1mm; }
       .rc-no { text-align:left; font-size:9.5pt; color:#6b6480; }
       .rc-no b { display:block; font-family:'Frank Ruhl Libre',serif; font-size:16pt; color:#1a1a2e; }
 
-      .rc-title { text-align:center; font-family:'Frank Ruhl Libre',serif; font-size:16pt; font-weight:700; margin:6mm 0 5mm; }
+      .rc-title { text-align:center; font-family:'Frank Ruhl Libre',serif; font-size:16pt; font-weight:700; margin:4mm 0 4mm; }
 
-      .rc-line { display:flex; gap:4mm; align-items:baseline; margin-bottom:4mm; font-size:12pt; }
+      .rc-line { display:flex; gap:4mm; align-items:baseline; margin-bottom:2.5mm; font-size:12pt; }
       .rc-key { color:#6b6480; font-size:10.5pt; width:26mm; flex:0 0 auto; }
-      .rc-val { flex:1; border-bottom:1px dotted #bdb6a4; padding-bottom:1mm; font-weight:600; unicode-bidi:plaintext; }
+      .rc-val { flex:1; border-bottom:1px dotted #bdb6a4; padding-bottom:1mm; font-weight:600; unicode-bidi:plaintext; text-align:right; }
       .rc-amount .rc-val { font-family:'Frank Ruhl Libre',serif; font-size:17pt; font-weight:700; }
-      .rc-words { font-size:10pt; color:#4a4560; margin:-2mm 0 5mm 0; padding-right:30mm; }
+      .rc-words { font-size:10pt; color:#4a4560; margin:-1.5mm 0 4mm 0; padding-right:30mm; }
 
-      .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:7mm; }
+      .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:4mm; }
       /* The stamp. Set as text so it prints sharp and needs no file; a
          photographed stamp dropped in at /stamp.png takes its place (see the
          onload below), which is why both live in the same box. */
@@ -110,7 +121,7 @@
       .rc-stamp-3 { font-size:8.5pt; font-weight:500; letter-spacing:0.5pt; }
       .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
       .rc-void {
-        position:fixed; top:38%; right:18%; font-family:'Frank Ruhl Libre',serif;
+        position:absolute; top:34%; right:14%; font-family:'Frank Ruhl Libre',serif;
         font-size:52pt; font-weight:700; color:rgba(176,33,33,.22);
         transform:rotate(-18deg); letter-spacing:6pt;
       }
@@ -148,11 +159,20 @@
       <button type="button" onclick="doLogout()">התנתק</button>
     </div>
 
+    <div class="period">
+      <select id="period" onchange="onPeriodChange()"></select>
+    </div>
+    <div class="period-range" id="period-range">
+      <input type="date" id="from" onchange="applyFilter()" aria-label="מתאריך" />
+      <input type="date" id="to" onchange="applyFilter()" aria-label="עד תאריך" />
+    </div>
+
     <div class="totals">
       <div class="total-box"><div class="total-label">תרומות</div><div class="total-value" id="t-donation">—</div></div>
       <div class="total-box"><div class="total-label">דמי חבר</div><div class="total-value" id="t-membership">—</div></div>
       <div class="total-box"><div class="total-label">קבלות</div><div class="total-value" id="t-count">—</div></div>
     </div>
+    <div class="totals-note" id="totals-note"></div>
 
     <div class="card">
       <h2>הפקת קבלה</h2>
@@ -232,8 +252,8 @@
         </div>
       </div>
     </div>
+    <div class="rc-void" id="s-void" style="display:none">מבוטל</div>
   </div>
-  <div class="rc-void" id="s-void" style="display:none">מבוטל</div>
 </div>
 
 <script data-cfasync="false">
@@ -338,6 +358,27 @@
   const heDate = (iso) =>
     new Date(iso + 'T12:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  // The Hebrew date, in letters rather than digits, the way a document of this
+  // kind is dated. Intl knows the calendar — including which Adar a leap year
+  // is in — and the letters are put on the number here.
+  const LETTERS = [[400,'ת'],[300,'ש'],[200,'ר'],[100,'ק'],[90,'צ'],[80,'פ'],[70,'ע'],[60,'ס'],[50,'נ'],[40,'מ'],[30,'ל'],[20,'כ'],[10,'י'],[9,'ט'],[8,'ח'],[7,'ז'],[6,'ו'],[5,'ה'],[4,'ד'],[3,'ג'],[2,'ב'],[1,'א']];
+  function gematriya(n) {
+    let out = '', rest = n;
+    for (const [value, letter] of LETTERS) while (rest >= value) { out += letter; rest -= value; }
+    // Fifteen and sixteen are written טו and טז, never as letters of the Name.
+    return out.replace('יה', 'טו').replace('יו', 'טז');
+  }
+  const punctuate = (s) => (s.length === 1 ? s + '׳' : s.slice(0, -1) + '״' + s.slice(-1));
+  const HEB_FMT = new Intl.DateTimeFormat('he-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  function hebrewDate(iso) {
+    // Midday, so the civil date and the Hebrew date name the same daytime.
+    const parts = HEB_FMT.formatToParts(new Date(iso + 'T12:00:00'))
+      .reduce((all, part) => { all[part.type] = part.value; return all; }, {});
+    const month = parts.month.replace(/^ב/, '');
+    return `${punctuate(gematriya(+parts.day))} ב${month} ${punctuate(gematriya(+parts.year % 1000))}`;
+  }
+
   function setType(v) {
     type = v;
     document.querySelectorAll('#type-toggle button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
@@ -350,7 +391,7 @@
     $('s-name').textContent = r.name;
     $('s-amount').textContent = shekels(r.amount);
     $('s-words').textContent = '(' + amountInWords(r.amount) + ')';
-    $('s-date').textContent = heDate(r.date);
+    $('s-date').textContent = hebrewDate(r.date) + '  (' + heDate(r.date) + ')';
     $('s-note').textContent = r.note || '';
     $('s-note-line').style.display = r.note ? 'flex' : 'none';
     $('s-void').style.display = r.voided ? 'block' : 'none';
@@ -358,20 +399,83 @@
   }
 
   // ── The book ──────────────────────────────────────────────────────────
-  function renderTotals(t) {
-    $('t-donation').textContent = shekels(t.donation);
-    $('t-membership').textContent = shekels(t.membership);
-    $('t-count').textContent = String(t.count);
+  // Receipts carry a civil date; the Hebrew year each one falls in is derived
+  // from it, so a book can be totalled the way the community counts a year.
+  const hebrewYearOf = (iso) =>
+    +HEB_FMT.formatToParts(new Date(iso + 'T12:00:00')).find((part) => part.type === 'year').value;
+
+  const todayIso = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+
+  function periodFilter() {
+    const value = $('period').value;
+    if (value === 'all') return () => true;
+    if (value === 'range') {
+      const from = $('from').value;
+      const to = $('to').value;
+      return (r) => (!from || r.date >= from) && (!to || r.date <= to);
+    }
+    const year = +value;
+    return (r) => hebrewYearOf(r.date) === year;
+  }
+
+  // The years the book actually covers, newest first, plus the year we are in
+  // even before it has a single receipt.
+  function buildPeriods() {
+    const select = $('period');
+    const previous = select.value;
+    const years = new Set(book.map((r) => hebrewYearOf(r.date)));
+    years.add(hebrewYearOf(todayIso()));
+    select.innerHTML = '';
+    [...years].sort((a, b) => b - a).forEach((year) => {
+      const option = document.createElement('option');
+      option.value = String(year);
+      option.textContent = 'שנת ' + punctuate(gematriya(year % 1000)) + ' (' + year + ')';
+      select.appendChild(option);
+    });
+    for (const [value, label] of [['all', 'כל השנים'], ['range', 'טווח תאריכים…']]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    }
+    // Back to what was chosen, or to the Hebrew year we are in.
+    select.value = previous && [...select.options].some((o) => o.value === previous)
+      ? previous
+      : String(hebrewYearOf(todayIso()));
+  }
+
+  function onPeriodChange() {
+    $('period-range').classList.toggle('show', $('period').value === 'range');
+    applyFilter();
+  }
+
+  function applyFilter() {
+    renderTotals();
+    renderLedger();
+  }
+
+  function renderTotals() {
+    const inPeriod = book.filter(periodFilter());
+    const live = inPeriod.filter((r) => !r.voided);
+    const sum = (type) => live.filter((r) => r.type === type).reduce((a, r) => a + r.amount, 0);
+    $('t-donation').textContent = shekels(Math.round(sum('donation') * 100) / 100);
+    $('t-membership').textContent = shekels(Math.round(sum('membership') * 100) / 100);
+    $('t-count').textContent = String(live.length);
+    const voided = inPeriod.length - live.length;
+    $('totals-note').textContent = voided
+      ? voided + (voided === 1 ? ' קבלה מבוטלת בתקופה זו אינה נספרת' : ' קבלות מבוטלות בתקופה זו אינן נספרות')
+      : '';
   }
 
   function renderLedger() {
     const q = $('q').value.trim().toLowerCase();
-    const rows = book.filter((r) =>
-      !q || r.name.toLowerCase().includes(q) || String(r.number).includes(q));
+    const inPeriod = periodFilter();
+    const rows = book.filter((r) => inPeriod(r)
+      && (!q || r.name.toLowerCase().includes(q) || String(r.number).includes(q)));
     const box = $('ledger');
     box.innerHTML = '';
     if (!rows.length) {
-      box.innerHTML = '<div class="empty">' + (book.length ? 'אין תוצאות לחיפוש.' : 'עדיין לא הופקו קבלות.') + '</div>';
+      box.innerHTML = '<div class="empty">' + (book.length ? 'אין קבלות שמתאימות לסינון.' : 'עדיין לא הופקו קבלות.') + '</div>';
       return;
     }
     rows.forEach((r) => {
@@ -444,8 +548,8 @@
         body: { action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim() },
       });
       book = data.receipts;
-      renderTotals(data.totals);
-      renderLedger();
+      buildPeriods();
+      applyFilter();
       status('status', 'קבלה #' + data.receipt.number + ' הופקה. פותח הדפסה...', 'success');
       $('f-name').value = '';
       $('f-amount').value = '';
@@ -462,8 +566,8 @@
     try {
       const data = await api('/api/receipts', { body: { action: 'void', number, reason } });
       book = data.receipts;
-      renderTotals(data.totals);
-      renderLedger();
+      buildPeriods();
+      applyFilter();
       status('status', 'קבלה #' + number + ' בוטלה.', 'success');
     } catch (e) {
       if (e.message !== 'unauthorized') status('status', 'שגיאה: ' + e.message, 'error');
@@ -473,8 +577,8 @@
   async function loadBook() {
     const data = await api('/api/receipts');
     book = data.receipts;
-    renderTotals(data.totals);
-    renderLedger();
+    buildPeriods();
+    applyFilter();
   }
 
   // ── Session ───────────────────────────────────────────────────────────

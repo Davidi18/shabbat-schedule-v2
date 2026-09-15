@@ -101,13 +101,3 @@ export function voidReceipt(number, reason, user) {
   return { receipt };
 }
 
-// Totals for the page header, counting only what still stands.
-export function receiptTotals() {
-  const live = read().receipts.filter((r) => !r.voided);
-  const sum = (type) => live.filter((r) => r.type === type).reduce((a, r) => a + r.amount, 0);
-  return {
-    count: live.length,
-    donation: Math.round(sum('donation') * 100) / 100,
-    membership: Math.round(sum('membership') * 100) / 100,
-  };
-}

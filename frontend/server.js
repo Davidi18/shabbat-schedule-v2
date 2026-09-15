@@ -25,7 +25,7 @@ import {
   clientAddr, can, publicUser, listUsers, createUser, updateUser, deleteUser, ROLES,
   changeOwnPassword, startSession,
 } from './auth.js';
-import { initReceipts, listReceipts, createReceipt, voidReceipt, receiptTotals } from './receipts.js';
+import { initReceipts, listReceipts, createReceipt, voidReceipt } from './receipts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -245,7 +245,7 @@ const server = http.createServer(async (req, res) => {
     if (!can(me, 'receipts')) return sendJSON(res, 403, { error: 'forbidden' });
 
     if (req.method === 'GET') {
-      return sendJSON(res, 200, { receipts: listReceipts(), totals: receiptTotals() });
+      return sendJSON(res, 200, { receipts: listReceipts() });
     }
     if (req.method === 'POST') {
       if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
@@ -256,7 +256,7 @@ const server = http.createServer(async (req, res) => {
         else if (body.action === 'void') result = voidReceipt(body.number, body.reason, me);
         else return sendJSON(res, 400, { error: 'unknown action' });
         if (result.error) return sendJSON(res, 400, { error: result.error });
-        return sendJSON(res, 200, { ...result, receipts: listReceipts(), totals: receiptTotals() });
+        return sendJSON(res, 200, { ...result, receipts: listReceipts() });
       } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
     }
     return sendJSON(res, 405, { error: 'method not allowed' });

@@ -77,6 +77,19 @@
     }
     .user-actions .danger { color:#b02121; border-color:#f0cccc; }
     .divider { border:0; border-top:1px solid var(--line); margin:18px 0 16px; }
+
+    /* A section you open when you need it. */
+    .fold { padding:0; }
+    .fold > summary {
+      list-style:none; cursor:pointer; padding:14px 18px;
+      font-weight:700; font-size:0.95rem; color:var(--ink);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .fold > summary::-webkit-details-marker { display:none; }
+    .fold > summary::after { content:'▾'; color:var(--muted); font-size:0.85rem; }
+    .fold[open] > summary::after { content:'▴'; }
+    .fold[open] > summary { border-bottom:1px solid var(--line); }
+    .fold-body { padding:16px 18px 18px; }
     .empty { color:var(--muted); font-size:0.9rem; }
 
     /* The names sheet: hidden on screen, and the only thing that reaches the
@@ -132,22 +145,6 @@
     <div class="userbar">
       <span><span class="who" id="who"></span> <span class="roles" id="who-roles"></span></span>
       <button type="button" onclick="doLogout()">התנתק</button>
-    </div>
-
-    <!-- Your own password -->
-    <div class="card" id="section-password" style="display:none">
-      <h2>החלפת הסיסמה שלי</h2>
-      <div class="sub" style="margin:0 0 12px">אם הסיסמה שלך נשלחה אליך בהודעה, כדאי להחליף אותה עכשיו. ההחלפה מנתקת את כל המכשירים שמחוברים לחשבון.</div>
-      <div class="field">
-        <label>הסיסמה הנוכחית</label>
-        <input type="password" id="p-current" autocomplete="current-password" />
-      </div>
-      <div class="field">
-        <label>סיסמה חדשה <span class="hint">(8 תווים לפחות)</span></label>
-        <input type="password" id="p-next" autocomplete="new-password" onkeydown="if(event.key==='Enter')changeMyPassword()" />
-      </div>
-      <button class="btn btn-primary" id="p-btn" onclick="changeMyPassword()">החלף סיסמה</button>
-      <div class="status" id="p-status"></div>
     </div>
 
     <!-- Nothing this account is allowed to open -->
@@ -246,6 +243,25 @@
         <div class="status" id="users-status"></div>
       </div>
     </div>
+
+    <!-- Your own password. Folded shut: needed once, when an account changes
+         hands, not on every visit. -->
+    <details class="card fold" id="section-password">
+      <summary>החלפת הסיסמה שלי</summary>
+      <div class="fold-body">
+        <div class="sub" style="margin:0 0 12px">אם הסיסמה שלך נשלחה אליך בהודעה, כדאי להחליף אותה. ההחלפה מנתקת את כל המכשירים שמחוברים לחשבון.</div>
+        <div class="field">
+          <label>הסיסמה הנוכחית</label>
+          <input type="password" id="p-current" autocomplete="current-password" />
+        </div>
+        <div class="field">
+          <label>סיסמה חדשה <span class="hint">(8 תווים לפחות)</span></label>
+          <input type="password" id="p-next" autocomplete="new-password" onkeydown="if(event.key==='Enter')changeMyPassword()" />
+        </div>
+        <button class="btn btn-primary" id="p-btn" onclick="changeMyPassword()">החלף סיסמה</button>
+        <div class="status" id="p-status"></div>
+      </div>
+    </details>
   </div>
 
   <div class="brand">קהילת אורות ישראל 🦾</div>
@@ -558,7 +574,7 @@
     $('section-receipts').style.display = receipts ? 'block' : 'none';
     $('section-users').style.display = admin ? 'block' : 'none';
     $('section-none').style.display = (content || receipts || admin) ? 'none' : 'block';
-    $('section-password').style.display = 'block';
+    $('section-password').open = false;
     $('sub').style.display = content ? 'block' : 'none';
 
     if (content) await loadContent();
