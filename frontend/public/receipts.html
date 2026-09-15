@@ -89,10 +89,13 @@
     }
     .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:5mm 9mm; position:relative; }
     .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:3mm; }
-    .rc-logo { height:18mm; width:auto; }
+    /* The logo is wide; at 18mm tall it took a third of the sheet and left
+       the address line half a millimetre of slack, which the rasteriser then
+       broke onto a second line. */
+    .rc-logo { height:15mm; width:auto; }
     .rc-org { flex:1; }
     .rc-org-name { font-family:'Frank Ruhl Libre',serif; font-size:19pt; font-weight:700; line-height:1.2; }
-    .rc-org-sub { font-size:9.5pt; color:#6b6480; margin-top:1mm; }
+    .rc-org-sub { font-size:9pt; color:#6b6480; margin-top:1mm; }
     .rc-no { text-align:left; font-size:9.5pt; color:#6b6480; }
     .rc-no b { display:block; font-family:'Frank Ruhl Libre',serif; font-size:16pt; color:#1a1a2e; }
 
