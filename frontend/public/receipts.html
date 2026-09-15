@@ -96,7 +96,7 @@
       .rc-words { font-size:10pt; color:#4a4560; margin:-2mm 0 5mm 0; padding-right:30mm; }
 
       .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:7mm; }
-      .rc-sign { width:55mm; text-align:center; font-size:9.5pt; color:#6b6480; border-top:1px solid #bdb6a4; padding-top:1.5mm; }
+      .rc-stamp { max-height:26mm; max-width:52mm; width:auto; object-fit:contain; }
       .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
       .rc-void {
         position:fixed; top:38%; right:18%; font-family:'Frank Ruhl Libre',serif;
@@ -167,7 +167,7 @@
         </div>
       </div>
       <div class="field">
-        <label>לציון <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
+        <label>הערות <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
         <input type="text" id="f-note" placeholder="" onkeydown="if(event.key==='Enter')issue()" />
       </div>
       <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק והדפס</button>
@@ -201,17 +201,17 @@
     <div class="rc-title" id="s-title"></div>
 
     <div class="rc-line"><span class="rc-key">התקבל מאת</span><span class="rc-val" id="s-name"></span></div>
-    <div class="rc-line rc-amount"><span class="rc-key">סך של</span><span class="rc-val" id="s-amount"></span></div>
+    <div class="rc-line rc-amount"><span class="rc-key">על סך</span><span class="rc-val" id="s-amount"></span></div>
     <div class="rc-words" id="s-words"></div>
     <div class="rc-line"><span class="rc-key">בתאריך</span><span class="rc-val" id="s-date"></span></div>
-    <div class="rc-line" id="s-note-line"><span class="rc-key">לציון</span><span class="rc-val" id="s-note"></span></div>
+    <div class="rc-line" id="s-note-line"><span class="rc-key">הערות</span><span class="rc-val" id="s-note"></span></div>
 
     <div class="rc-foot">
       <div class="rc-note">
         בתודה ובברכה, ויהי רצון שתזכו לראות ברכה בכל מעשי ידיכם.<br />
         אישור זה מעיד על קבלת הסכום בלבד ואינו קבלה לצורכי מס.
       </div>
-      <div class="rc-sign">חתימת הגבאי</div>
+      <img class="rc-stamp" src="/stamp.png" alt="" onerror="this.style.display='none'" />
     </div>
   </div>
   <div class="rc-void" id="s-void" style="display:none">מבוטל</div>

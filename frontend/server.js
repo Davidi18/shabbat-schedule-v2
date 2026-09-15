@@ -1,13 +1,19 @@
-// Tiny zero-dependency server: serves the built PWA (dist/) AND a small content
-// API backed by a JSON file on a persistent volume (DATA_DIR). The gabbai edits
-// content via /admin.html with a password (GABBAI_PASSWORD) — no code, no tokens.
+// Tiny zero-dependency server: serves the built PWA (dist/) AND a small API
+// backed by JSON files on a persistent volume (DATA_DIR). Gabbaim sign in at
+// /admin.html with their own account; roles decide what each may reach.
 //
-//   GET  /api/content        → current community content (falls back to the
-//                              bundled default shipped in dist/data.json)
-//   POST /api/content        → save content (requires header x-admin-key)
-//   POST /api/login          → validate the gabbai password
+//   GET  /api/content        → current community content, public (falls back to
+//                              the bundled default shipped in dist/data.json)
 //   GET  /api/dvar           → this week's automatic halacha (Arukh HaShulchan
 //                              via Sefaria, deterministic per week, disk-cached)
+//   POST /api/auth/login     → sign in, sets the session cookie
+//   POST /api/auth/logout    → sign out, revokes the session
+//   GET  /api/auth/me        → the signed-in account
+//   POST /api/auth/password  → change your own password
+//   POST /api/content        → save content            (role: content)
+//   GET/POST /api/receipts   → the receipt book        (role: receipts)
+//   GET/POST /api/users      → accounts and roles      (role: admin)
+//   anything else under /api → 404
 //   everything else          → static file from dist/, SPA fallback to index.html
 import http from 'node:http';
 import fs from 'node:fs';
@@ -17,6 +23,7 @@ import { upcomingShabbatKey, fetchWeeklyDvar } from './dvar.js';
 import {
   initAuth, login, logout, userFromRequest, sessionTokenOf, sessionCookie, clearCookie,
   clientAddr, can, publicUser, listUsers, createUser, updateUser, deleteUser, ROLES,
+  changeOwnPassword, startSession,
 } from './auth.js';
 import { initReceipts, listReceipts, createReceipt, voidReceipt, receiptTotals } from './receipts.js';
 
@@ -208,6 +215,21 @@ const server = http.createServer(async (req, res) => {
     logout(sessionTokenOf(req));
     res.setHeader('Set-Cookie', clearCookie(req));
     return sendJSON(res, 200, { ok: true });
+  }
+
+  if (url === '/api/auth/password' && req.method === 'POST') {
+    const me = userFromRequest(req);
+    if (!me) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
+    try {
+      const { current, next } = JSON.parse(await readBody(req) || '{}');
+      const result = changeOwnPassword(me.id, current, next);
+      if (result.error) return sendJSON(res, 400, { error: result.error });
+      // The change dropped every session, this one included. Hand this
+      // browser a new one so the gabbai isn't thrown out of the screen.
+      res.setHeader('Set-Cookie', sessionCookie(req, startSession(me.id)));
+      return sendJSON(res, 200, { ok: true });
+    } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
   }
 
   if (url === '/api/auth/me' && req.method === 'GET') {

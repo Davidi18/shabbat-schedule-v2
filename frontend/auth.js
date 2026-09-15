@@ -296,6 +296,37 @@ export function login(username, password, addr) {
   return { token: createSession(user.id), user: publicUser(user) };
 }
 
+// Anyone can change their own password, which matters because a new account
+// arrives with a password someone else chose and sent over WhatsApp. The
+// current password is required, so a borrowed unlocked phone cannot be used
+// to lock the real owner out.
+export function changeOwnPassword(userId, currentPassword, newPassword) {
+  const throttleKey = 'pw:' + userId;
+  const wait = throttleWaitMs(throttleKey);
+  if (wait > 0) return { error: 'יותר מדי ניסיונות. נסה שוב בעוד ' + Math.ceil(wait / 1000) + ' שניות' };
+
+  const db = readUsers();
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) return { error: 'המשתמש לא נמצא' };
+  if (!passwordMatches(user, String(currentPassword || ''))) {
+    noteFailure(throttleKey);
+    return { error: 'הסיסמה הנוכחית שגויה' };
+  }
+  const problem = passwordProblem(newPassword);
+  if (problem) return { error: problem };
+  if (newPassword === currentPassword) return { error: 'הסיסמה החדשה זהה לנוכחית' };
+  clearFailures(throttleKey);
+  setPassword(user, newPassword);
+  writeUsers(db);
+  // Every device signs out, so a password handed over in a message stops
+  // working the moment its owner replaces it.
+  revokeUserSessions(userId);
+  return { ok: true };
+}
+
+// A fresh session for a browser that has just proved itself again.
+export const startSession = (userId) => createSession(userId);
+
 export function logout(token) {
   if (!token) return;
   const sessions = readSessions();

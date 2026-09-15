@@ -134,6 +134,22 @@
       <button type="button" onclick="doLogout()">התנתק</button>
     </div>
 
+    <!-- Your own password -->
+    <div class="card" id="section-password" style="display:none">
+      <h2>החלפת הסיסמה שלי</h2>
+      <div class="sub" style="margin:0 0 12px">אם הסיסמה שלך נשלחה אליך בהודעה, כדאי להחליף אותה עכשיו. ההחלפה מנתקת את כל המכשירים שמחוברים לחשבון.</div>
+      <div class="field">
+        <label>הסיסמה הנוכחית</label>
+        <input type="password" id="p-current" autocomplete="current-password" />
+      </div>
+      <div class="field">
+        <label>סיסמה חדשה <span class="hint">(8 תווים לפחות)</span></label>
+        <input type="password" id="p-next" autocomplete="new-password" onkeydown="if(event.key==='Enter')changeMyPassword()" />
+      </div>
+      <button class="btn btn-primary" id="p-btn" onclick="changeMyPassword()">החלף סיסמה</button>
+      <div class="status" id="p-status"></div>
+    </div>
+
     <!-- Nothing this account is allowed to open -->
     <div class="card" id="section-none" style="display:none">
       <div class="empty">לחשבון שלך אין עדיין הרשאות. בקש ממנהל המערכת לפתוח לך גישה.</div>
@@ -363,6 +379,24 @@
     }
   }
 
+  async function changeMyPassword() {
+    const current = $('p-current').value;
+    const next = $('p-next').value;
+    if (!current || !next) { status('p-status', 'מלא את שתי הסיסמאות', 'error'); return; }
+    $('p-btn').disabled = true;
+    status('p-status', 'מחליף...', 'loading');
+    try {
+      await api('/api/auth/password', { body: { current, next } });
+      $('p-current').value = '';
+      $('p-next').value = '';
+      status('p-status', 'הסיסמה הוחלפה. שאר המכשירים שהיו מחוברים נותקו.', 'success');
+    } catch (e) {
+      if (e.message !== 'unauthorized') status('p-status', e.message, 'error');
+    } finally {
+      $('p-btn').disabled = false;
+    }
+  }
+
   // ── Accounts ──────────────────────────────────────────────────────────
   function roleCheckboxes(container, selected, idPrefix) {
     container.innerHTML = '';
@@ -524,6 +558,7 @@
     $('section-receipts').style.display = receipts ? 'block' : 'none';
     $('section-users').style.display = admin ? 'block' : 'none';
     $('section-none').style.display = (content || receipts || admin) ? 'none' : 'block';
+    $('section-password').style.display = 'block';
     $('sub').style.display = content ? 'block' : 'none';
 
     if (content) await loadContent();
