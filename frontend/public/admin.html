@@ -13,6 +13,7 @@
     body { margin:0; background:var(--bg); color:var(--ink); font-family:'Rubik',sans-serif; padding:20px; }
     .wrap { max-width:640px; margin:0 auto; }
     h1 { font-size:1.4rem; margin:6px 0 2px; }
+    h2 { font-size:1.05rem; margin:0 0 4px; }
     .sub { color:var(--muted); font-size:0.9rem; margin-bottom:18px; line-height:1.5; }
     .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 2px 10px rgba(20,20,50,.04); }
     .field { margin-bottom:14px; }
@@ -20,6 +21,7 @@
     .field label { display:block; font-weight:700; font-size:0.92rem; margin-bottom:6px; }
     .field .hint { font-weight:400; color:var(--muted); font-size:0.8rem; }
     .field input, .field textarea { width:100%; padding:11px 12px; border:1px solid #ddd; border-radius:10px; font-family:'Rubik',sans-serif; font-size:0.95rem; direction:rtl; background:#fff; }
+    .field input[type=password], .field input.ltr { direction:ltr; text-align:right; }
     .field textarea { min-height:90px; resize:vertical; line-height:1.6; }
     .check-row { display:flex; align-items:center; gap:9px; }
     .check-row input[type=checkbox] { width:18px; height:18px; margin:0; accent-color:var(--gold); flex:0 0 auto; cursor:pointer; }
@@ -46,6 +48,36 @@
     .brand { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:8px; }
     .btn-print { background:#fff; border:1.5px solid var(--gold); color:#8a6d12; margin-top:12px; }
     .btn-print:disabled { opacity:.45; cursor:default; }
+
+    /* Who is signed in, and the way out. */
+    .userbar {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:#fff; border:1px solid var(--line); border-radius:14px;
+      padding:10px 14px; margin-bottom:16px; font-size:0.9rem;
+    }
+    .userbar .who { font-weight:700; }
+    .userbar .roles { color:var(--muted); font-weight:400; font-size:0.82rem; }
+    .userbar button { border:none; background:transparent; color:var(--muted); font-family:'Rubik',sans-serif; font-size:0.85rem; cursor:pointer; text-decoration:underline; padding:4px; }
+
+    /* One row per account: who they are, what they may do, and the way to
+       change either. Kept open rather than behind an edit mode — with a handful
+       of gabbaim, seeing every permission at once is the point. */
+    .user-row { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+    .user-row.is-disabled { opacity:.6; background:#faf8f3; }
+    .user-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:9px; }
+    .user-name { font-weight:700; }
+    .user-handle { color:var(--muted); font-size:0.82rem; direction:ltr; unicode-bidi:plaintext; }
+    .role-row { display:flex; flex-wrap:wrap; gap:6px 14px; margin-bottom:9px; }
+    .role-row label { display:inline-flex; align-items:center; gap:6px; font-size:0.88rem; font-weight:500; cursor:pointer; }
+    .role-row input { width:17px; height:17px; margin:0; accent-color:var(--gold); cursor:pointer; }
+    .user-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .user-actions button, .mini-btn {
+      border:1px solid #ddd; background:#fff; border-radius:9px; padding:7px 12px;
+      font-family:'Rubik',sans-serif; font-size:0.84rem; font-weight:500; cursor:pointer; color:var(--ink);
+    }
+    .user-actions .danger { color:#b02121; border-color:#f0cccc; }
+    .divider { border:0; border-top:1px solid var(--line); margin:18px 0 16px; }
+    .empty { color:var(--muted); font-size:0.9rem; }
 
     /* The names sheet: hidden on screen, and the only thing that reaches the
        printer. Kept in-page (rather than a popup window) so it prints offline
@@ -78,70 +110,117 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>ניהול תוכן · זמני השבת</h1>
-  <div class="sub">מה שתערוך כאן יופיע באתר לכל הקהילה מיד. הזמנים, הפרשה, המולד וההלכה השבועית מתעדכנים אוטומטית — כאן עורכים רק תוכן. התוכן שנשמר תקף לשבת הקרובה בלבד: לאחר השבת התיאור, ההודעות והקידוש מתנקים ונושא השיעור חוזר לברירת המחדל.</div>
+  <h1>ניהול · זמני השבת</h1>
+  <div class="sub" id="sub">מה שתערוך כאן יופיע באתר לכל הקהילה מיד. הזמנים, הפרשה, המולד וההלכה השבועית מתעדכנים אוטומטית — כאן עורכים רק תוכן. התוכן שנשמר תקף לשבת הקרובה בלבד: לאחר השבת התיאור, ההודעות והקידוש מתנקים ונושא השיעור חוזר לברירת המחדל.</div>
 
-  <!-- Login -->
+  <!-- Sign in -->
   <div class="card" id="login-card" style="display:none">
-    <div class="field" style="margin-bottom:12px">
-      <label>סיסמת ניהול</label>
-      <input type="password" id="pw" placeholder="הסיסמה שקיבלת" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div class="field">
+      <label>שם משתמש</label>
+      <input type="text" id="u" class="ltr" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" />
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">כניסה</button>
+    <div class="field" style="margin-bottom:12px">
+      <label>סיסמה</label>
+      <input type="password" id="pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">כניסה</button>
     <div class="status" id="login-status"></div>
   </div>
 
-  <!-- Editor -->
+  <!-- Signed in -->
   <div id="editor" style="display:none">
-    <div class="card">
-      <div class="field">
-        <label>תיאור השבת <span class="hint">(שורה מתחת לכותרת. ריק = אוטומטי, למשל "שבת מברכין חודש אב")</span></label>
-        <input type="text" id="f-desc" placeholder="" />
-      </div>
-      <div class="field">
-        <label>נושא השיעור <span class="hint">(ברירת מחדל: הלכות שבת)</span></label>
-        <input type="text" id="f-shiur" placeholder="הלכות שבת" />
-        <div class="check-row" style="margin-top:9px">
-          <input type="checkbox" id="f-shiur-rav" checked />
-          <label for="f-shiur-rav">השיעור מאת הרב נתנאל <span class="hint">(בלי סימון: "שיעור בהלכות שבת לאחר התפילה")</span></label>
-        </div>
-      </div>
-      <div class="field">
-        <label>הודעות לקהילה <span class="hint">(בר מצווה, ברית, אזכרה, שמחות — יופיע בראש הדף. ריק = לא מוצג)</span></label>
-        <textarea id="f-messages" placeholder="לדוגמה: בר המצווה של משפחת כהן — קידושא רבא לאחר התפילה"></textarea>
-      </div>
-      <div class="field">
-        <label>קידוש <span class="hint">(טקסט קצר בטיימליין. ריק = מוצג נושא השיעור)</span></label>
-        <input type="text" id="f-kidush" placeholder="" />
-      </div>
+    <div class="userbar">
+      <span><span class="who" id="who"></span> <span class="roles" id="who-roles"></span></span>
+      <button type="button" onclick="doLogout()">התנתק</button>
     </div>
 
-    <div class="card">
-      <div class="field" style="margin-bottom:0">
-        <label>רשימת חולים לתפילה <span class="hint">(נשמרת לאורך זמן — לא מתנקה אחרי שבת. הוסף שם ולחץ +, או הסר בלחיצה על ✕. הרשימה אינה מוצגת באתר — היא לשימוש הגבאי ולהדפסה)</span></label>
-        <div class="add-row">
-          <input type="text" id="f-cholim" placeholder="שם החולה (למשל: יוסף בן שרה)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCholim();}" />
-          <button type="button" class="add-btn" onclick="addCholim()" aria-label="הוסף">+</button>
-        </div>
-        <ul class="chip-list" id="cholim-list"></ul>
-        <button type="button" class="btn btn-print" id="print-btn" onclick="printCholim()">🖨️ הדפסת רשימת השמות</button>
-      </div>
+    <!-- Nothing this account is allowed to open -->
+    <div class="card" id="section-none" style="display:none">
+      <div class="empty">לחשבון שלך אין עדיין הרשאות. בקש ממנהל המערכת לפתוח לך גישה.</div>
     </div>
 
-    <div class="card">
-      <div class="field">
-        <label>שעון קיץ <span class="hint">(אוטומטי מזהה לבד; שנה רק אם צריך לכפות)</span></label>
-        <div class="toggle" id="summer-toggle">
-          <button type="button" data-val="null" onclick="setSummer(null)">אוטומטי</button>
-          <button type="button" data-val="true" onclick="setSummer(true)">קיץ</button>
-          <button type="button" data-val="false" onclick="setSummer(false)">חורף</button>
+    <!-- Weekly content -->
+    <div id="section-content" style="display:none">
+      <div class="card">
+        <div class="field">
+          <label>תיאור השבת <span class="hint">(שורה מתחת לכותרת. ריק = אוטומטי, למשל "שבת מברכין חודש אב")</span></label>
+          <input type="text" id="f-desc" placeholder="" />
+        </div>
+        <div class="field">
+          <label>נושא השיעור <span class="hint">(ברירת מחדל: הלכות שבת)</span></label>
+          <input type="text" id="f-shiur" placeholder="הלכות שבת" />
+          <div class="check-row" style="margin-top:9px">
+            <input type="checkbox" id="f-shiur-rav" checked />
+            <label for="f-shiur-rav">השיעור מאת הרב נתנאל <span class="hint">(בלי סימון: "שיעור בהלכות שבת לאחר התפילה")</span></label>
+          </div>
+        </div>
+        <div class="field">
+          <label>הודעות לקהילה <span class="hint">(בר מצווה, ברית, אזכרה, שמחות — יופיע בראש הדף. ריק = לא מוצג)</span></label>
+          <textarea id="f-messages" placeholder="לדוגמה: בר המצווה של משפחת כהן — קידושא רבא לאחר התפילה"></textarea>
+        </div>
+        <div class="field">
+          <label>קידוש <span class="hint">(טקסט קצר בטיימליין. ריק = מוצג נושא השיעור)</span></label>
+          <input type="text" id="f-kidush" placeholder="" />
         </div>
       </div>
+
+      <div class="card">
+        <div class="field" style="margin-bottom:0">
+          <label>רשימת חולים לתפילה <span class="hint">(נשמרת לאורך זמן — לא מתנקה אחרי שבת. הוסף שם ולחץ +, או הסר בלחיצה על ✕. הרשימה אינה מוצגת באתר — היא לשימוש הגבאי ולהדפסה)</span></label>
+          <div class="add-row">
+            <input type="text" id="f-cholim" placeholder="שם החולה (למשל: יוסף בן שרה)" onkeydown="if(event.key==='Enter'){event.preventDefault();addCholim();}" />
+            <button type="button" class="add-btn" onclick="addCholim()" aria-label="הוסף">+</button>
+          </div>
+          <ul class="chip-list" id="cholim-list"></ul>
+          <button type="button" class="btn btn-print" id="print-btn" onclick="printCholim()">🖨️ הדפסת רשימת השמות</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>שעון קיץ <span class="hint">(אוטומטי מזהה לבד; שנה רק אם צריך לכפות)</span></label>
+          <div class="toggle" id="summer-toggle">
+            <button type="button" data-val="null" onclick="setSummer(null)">אוטומטי</button>
+            <button type="button" data-val="true" onclick="setSummer(true)">קיץ</button>
+            <button type="button" data-val="false" onclick="setSummer(false)">חורף</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="save-btn" onclick="save()">💾 שמור ופרסם</button>
+      <div class="status" id="status"></div>
     </div>
 
-    <button class="btn btn-primary" id="save-btn" onclick="save()">💾 שמור ופרסם</button>
-    <button class="btn btn-ghost" onclick="logout()">התנתק</button>
-    <div class="status" id="status"></div>
+    <!-- Accounts -->
+    <div id="section-users" style="display:none">
+      <div class="card">
+        <h2>משתמשים והרשאות</h2>
+        <div class="sub" style="margin:0 0 14px">כל אחד נכנס עם שם המשתמש והסיסמה שלו. ההרשאות קובעות אילו חלקים מהמסך הזה הוא רואה, והשרת אוכף אותן בכל פעולה.</div>
+        <div id="users-list"></div>
+
+        <hr class="divider" />
+        <h2>הוספת משתמש</h2>
+        <div class="field" style="margin-top:10px">
+          <label>שם מלא</label>
+          <input type="text" id="n-name" placeholder="למשל: משה כהן" />
+        </div>
+        <div class="field">
+          <label>שם משתמש <span class="hint">(אותיות באנגלית, ספרות, נקודה או מקף)</span></label>
+          <input type="text" id="n-username" class="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="moshe" />
+        </div>
+        <div class="field">
+          <label>סיסמה <span class="hint">(8 תווים לפחות)</span></label>
+          <input type="text" id="n-password" class="ltr" autocomplete="off" />
+          <button type="button" class="mini-btn" style="margin-top:8px" onclick="suggestPassword()">הצע סיסמה חזקה</button>
+        </div>
+        <div class="field">
+          <label>הרשאות</label>
+          <div class="role-row" id="n-roles"></div>
+        </div>
+        <button class="btn btn-primary" id="add-user-btn" onclick="addUser()">הוסף משתמש</button>
+        <div class="status" id="users-status"></div>
+      </div>
+    </div>
   </div>
 
   <div class="brand">קהילת אורות ישראל 🦾</div>
@@ -157,13 +236,39 @@
 </div>
 
 <script data-cfasync="false">
+  // The session lives in an HttpOnly cookie the browser attaches on its own, so
+  // this script holds no key and an injected script has none to steal. Every
+  // call below simply fetches; the server decides what is allowed.
   let summerValue = null;
   let cholim = [];
+  let me = null;
+  let users = [];
+  const ROLE_LABELS = {
+    admin: 'מנהל (כולל ניהול משתמשים)',
+    content: 'תוכן שבועי',
+    receipts: 'קבלות',
+  };
   const $ = (id) => document.getElementById(id);
-  const key = () => localStorage.getItem('admin_key') || '';
+  const status = (el, msg, type) => { const e = $(el); e.className = 'status show ' + type; e.innerText = msg; };
+  const clearStatus = (el) => { $(el).className = 'status'; };
+  const may = (role) => !!me && (me.roles.includes('admin') || me.roles.includes(role));
 
-  function status(el, msg, type) { const e = $(el); e.className = 'status show ' + type; e.innerText = msg; }
+  async function api(url, options) {
+    const opts = Object.assign({ cache: 'no-store' }, options);
+    if (opts.body !== undefined) {
+      opts.method = opts.method || 'POST';
+      opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers);
+      opts.body = JSON.stringify(opts.body);
+    }
+    const r = await fetch(url, opts);
+    let data = null;
+    try { data = await r.json(); } catch { /* empty body */ }
+    if (r.status === 401) { showLogin('ההתחברות פגה. התחבר שוב.'); throw new Error('unauthorized'); }
+    if (!r.ok) throw new Error((data && data.error) || ('HTTP ' + r.status));
+    return data;
+  }
 
+  // ── Weekly content ────────────────────────────────────────────────────
   function renderCholim() {
     const ul = $('cholim-list');
     ul.innerHTML = '';
@@ -207,14 +312,14 @@
     inp.focus();
     renderCholim();
   }
+
   function setSummer(v) {
     summerValue = v;
     document.querySelectorAll('#summer-toggle button').forEach((b) => b.classList.toggle('active', String(b.dataset.val) === String(v)));
   }
 
   async function loadContent() {
-    const r = await fetch('/api/content', { cache: 'no-store' });
-    const c = r.ok ? await r.json() : {};
+    const c = (await api('/api/content')) || {};
     $('f-desc').value = c.description || '';
     $('f-shiur').value = c.shiur_topic || '';
     $('f-shiur-rav').checked = c.shiur_by_rav !== false; // default: the Rav gives it
@@ -225,64 +330,236 @@
     setSummer(c.is_summer ?? null);
   }
 
-  async function showEditor() {
-    $('login-card').style.display = 'none';
-    $('editor').style.display = 'block';
-    await loadContent();
-  }
-
-  async function doLogin() {
-    const password = $('pw').value;
-    if (!password) return;
-    status('login-status', 'בודק...', 'loading');
-    try {
-      const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
-      if (!r.ok) { status('login-status', 'סיסמה שגויה', 'error'); return; }
-      localStorage.setItem('admin_key', password);
-      await showEditor();
-    } catch (e) { status('login-status', 'שגיאה: ' + e.message, 'error'); }
-  }
-
-  function logout() {
-    localStorage.removeItem('admin_key');
-    $('editor').style.display = 'none';
-    $('login-card').style.display = 'block';
-    $('pw').value = '';
-  }
-
   async function save() {
     const v = (id) => $(id).value.trim();
-    const body = {
-      _key: key(),
-      description: v('f-desc'),
-      shiur_topic: v('f-shiur'),
-      shiur_by_rav: $('f-shiur-rav').checked,
-      messages: v('f-messages'),
-      kidush: v('f-kidush'),
-      cholim: cholim,
-      is_summer: summerValue,
-    };
     $('save-btn').disabled = true;
     status('status', 'שומר...', 'loading');
     try {
-      const r = await fetch('/api/content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      await api('/api/content', {
+        body: {
+          description: v('f-desc'),
+          shiur_topic: v('f-shiur'),
+          shiur_by_rav: $('f-shiur-rav').checked,
+          messages: v('f-messages'),
+          kidush: v('f-kidush'),
+          cholim: cholim,
+          is_summer: summerValue,
+        },
       });
-      if (r.status === 401) { status('status', 'ההרשאה פגה — התחבר מחדש.', 'error'); logout(); return; }
-      if (!r.ok) throw new Error('HTTP ' + r.status);
       status('status', 'נשמר ופורסם! ✅ האתר כבר מעודכן.', 'success');
     } catch (e) {
-      status('status', 'שגיאה בשמירה: ' + e.message, 'error');
+      if (e.message !== 'unauthorized') status('status', 'שגיאה בשמירה: ' + e.message, 'error');
     } finally {
       $('save-btn').disabled = false;
     }
   }
 
-  // Auto-enter if already logged in on this device.
-  if (key()) { showEditor().catch(() => { $('login-card').style.display = 'block'; }); }
-  else { $('login-card').style.display = 'block'; }
+  // ── Accounts ──────────────────────────────────────────────────────────
+  function roleCheckboxes(container, selected, idPrefix) {
+    container.innerHTML = '';
+    Object.keys(ROLE_LABELS).forEach((role) => {
+      const label = document.createElement('label');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = role;
+      box.id = idPrefix + role;
+      box.checked = selected.includes(role);
+      label.appendChild(box);
+      label.appendChild(document.createTextNode(ROLE_LABELS[role]));
+      container.appendChild(label);
+    });
+  }
+
+  const rolesFrom = (container) =>
+    Array.from(container.querySelectorAll('input[type=checkbox]')).filter((b) => b.checked).map((b) => b.value);
+
+  function renderUsers() {
+    const box = $('users-list');
+    box.innerHTML = '';
+    if (!users.length) {
+      box.innerHTML = '<div class="empty">אין עדיין משתמשים.</div>';
+      return;
+    }
+    users.forEach((u) => {
+      const row = document.createElement('div');
+      row.className = 'user-row' + (u.disabled ? ' is-disabled' : '');
+
+      const head = document.createElement('div');
+      head.className = 'user-head';
+      const name = document.createElement('span');
+      name.className = 'user-name';
+      name.textContent = u.name + (u.id === me.id ? ' (אתה)' : '') + (u.disabled ? ' · מנוטרל' : '');
+      const handle = document.createElement('span');
+      handle.className = 'user-handle';
+      handle.textContent = u.username;
+      head.appendChild(name);
+      head.appendChild(handle);
+      row.appendChild(head);
+
+      const roles = document.createElement('div');
+      roles.className = 'role-row';
+      roleCheckboxes(roles, u.roles, 'r-' + u.id + '-');
+      row.appendChild(roles);
+
+      const actions = document.createElement('div');
+      actions.className = 'user-actions';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.textContent = 'שמור הרשאות';
+      saveBtn.onclick = () => userAction({ action: 'update', id: u.id, roles: rolesFrom(roles) }, 'ההרשאות עודכנו');
+      actions.appendChild(saveBtn);
+
+      const pwBtn = document.createElement('button');
+      pwBtn.type = 'button';
+      pwBtn.textContent = 'סיסמה חדשה';
+      pwBtn.onclick = () => {
+        const password = prompt('סיסמה חדשה עבור ' + u.name + ' (8 תווים לפחות).\nהעתק אותה עכשיו — היא לא תוצג שוב.', randomPassword());
+        if (!password) return;
+        userAction({ action: 'update', id: u.id, password }, 'הסיסמה הוחלפה. כל החיבורים הפתוחים של המשתמש נותקו.');
+      };
+      actions.appendChild(pwBtn);
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.textContent = u.disabled ? 'החזר לפעילות' : 'נטרל';
+      toggleBtn.onclick = () => userAction({ action: 'update', id: u.id, disabled: !u.disabled }, u.disabled ? 'המשתמש הוחזר לפעילות' : 'המשתמש נוטרל');
+      actions.appendChild(toggleBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'danger';
+      delBtn.textContent = 'מחק';
+      delBtn.onclick = () => {
+        if (!confirm('למחוק את ' + u.name + '? הפעולה אינה הפיכה.')) return;
+        userAction({ action: 'delete', id: u.id }, 'המשתמש נמחק');
+      };
+      actions.appendChild(delBtn);
+
+      row.appendChild(actions);
+      box.appendChild(row);
+    });
+  }
+
+  async function userAction(body, okMessage) {
+    status('users-status', 'שומר...', 'loading');
+    try {
+      const data = await api('/api/users', { body });
+      users = data.users;
+      renderUsers();
+      status('users-status', okMessage, 'success');
+    } catch (e) {
+      if (e.message !== 'unauthorized') status('users-status', 'שגיאה: ' + e.message, 'error');
+      throw e;
+    }
+  }
+
+  // Readable and long, which beats short and clever — this gets read out over
+  // the phone and typed in by hand.
+  function randomPassword() {
+    const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint32Array(14);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+  }
+
+  function suggestPassword() { $('n-password').value = randomPassword(); }
+
+  async function addUser() {
+    const body = {
+      action: 'create',
+      name: $('n-name').value.trim(),
+      username: $('n-username').value.trim(),
+      password: $('n-password').value,
+      roles: rolesFrom($('n-roles')),
+    };
+    $('add-user-btn').disabled = true;
+    try {
+      await userAction(body, 'המשתמש נוסף. מסור לו את שם המשתמש והסיסמה.');
+      $('n-name').value = '';
+      $('n-username').value = '';
+      $('n-password').value = '';
+      roleCheckboxes($('n-roles'), ['content'], 'n-role-');
+    } catch { /* the status line already says what went wrong */ }
+    finally { $('add-user-btn').disabled = false; }
+  }
+
+  async function loadUsers() {
+    const data = await api('/api/users');
+    users = data.users;
+    renderUsers();
+  }
+
+  // ── Session ───────────────────────────────────────────────────────────
+  function showLogin(message) {
+    me = null;
+    $('editor').style.display = 'none';
+    $('login-card').style.display = 'block';
+    $('sub').style.display = 'block';
+    $('pw').value = '';
+    if (message) status('login-status', message, 'error'); else clearStatus('login-status');
+  }
+
+  async function showEditor() {
+    $('login-card').style.display = 'none';
+    $('editor').style.display = 'block';
+    $('who').textContent = me.name;
+    $('who-roles').textContent = me.roles.length
+      ? '· ' + me.roles.map((r) => ROLE_LABELS[r] || r).join(' · ')
+      : '· ללא הרשאות';
+
+    const content = may('content');
+    const admin = may('admin');
+    $('section-content').style.display = content ? 'block' : 'none';
+    $('section-users').style.display = admin ? 'block' : 'none';
+    $('section-none').style.display = (content || admin) ? 'none' : 'block';
+    $('sub').style.display = content ? 'block' : 'none';
+
+    if (content) await loadContent();
+    if (admin) {
+      roleCheckboxes($('n-roles'), ['content'], 'n-role-');
+      await loadUsers();
+    }
+  }
+
+  async function doLogin() {
+    const username = $('u').value.trim();
+    const password = $('pw').value;
+    if (!username || !password) return;
+    $('login-btn').disabled = true;
+    status('login-status', 'בודק...', 'loading');
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { status('login-status', data.error || 'שם משתמש או סיסמה שגויים', 'error'); return; }
+      me = data.user;
+      clearStatus('login-status');
+      await showEditor();
+    } catch (e) {
+      status('login-status', 'שגיאה: ' + e.message, 'error');
+    } finally {
+      $('login-btn').disabled = false;
+    }
+  }
+
+  async function doLogout() {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* sign out locally anyway */ }
+    showLogin();
+  }
+
+  // Resume a session that is still valid on this device.
+  (async () => {
+    try {
+      const r = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (!r.ok) { showLogin(); return; }
+      me = (await r.json()).user;
+      await showEditor();
+    } catch { showLogin(); }
+  })();
 </script>
 </body>
 </html>

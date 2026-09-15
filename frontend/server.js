@@ -14,6 +14,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { upcomingShabbatKey, fetchWeeklyDvar } from './dvar.js';
+import {
+  initAuth, login, logout, userFromRequest, sessionTokenOf, sessionCookie, clearCookie,
+  clientAddr, can, publicUser, listUsers, createUser, updateUser, deleteUser, ROLES,
+} from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -21,7 +25,10 @@ const DIST = path.join(__dirname, 'dist');
 const DATA_DIR = process.env.DATA_DIR || '/data';
 const DATA_FILE = path.join(DATA_DIR, 'content.json');
 const SEED_FILE = path.join(DIST, 'data.json'); // bundled default content
-const ADMIN_KEY = process.env.GABBAI_PASSWORD || '';
+
+// Accounts live on the data volume. On a site that has none yet, the password
+// the gabbai already uses becomes the first admin account (see auth.js).
+initAuth(DATA_DIR);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -111,6 +118,13 @@ async function getDvar() {
   return null;
 }
 
+// A cross-site form can send urlencoded or multipart, never application/json,
+// so insisting on JSON keeps another origin from acting as a signed-in gabbai
+// on the strength of the cookie alone.
+function jsonRequest(req) {
+  return String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json');
+}
+
 function sendJSON(res, code, obj) {
   const body = JSON.stringify(obj);
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -176,20 +190,63 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, dvar ? 200 : 503, dvar || { error: 'unavailable' });
   }
 
-  if (url === '/api/login' && req.method === 'POST') {
+  // ── Accounts ──────────────────────────────────────────────────────────
+  if (url === '/api/auth/login' && req.method === 'POST') {
+    if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
     try {
-      const { password } = JSON.parse(await readBody(req) || '{}');
-      if (ADMIN_KEY && password === ADMIN_KEY) return sendJSON(res, 200, { ok: true });
-      return sendJSON(res, 401, { ok: false });
-    } catch { return sendJSON(res, 400, { ok: false }); }
+      const { username, password } = JSON.parse(await readBody(req) || '{}');
+      const result = login(username, password, clientAddr(req));
+      if (result.error) return sendJSON(res, result.retry_after ? 429 : 401, { error: result.error });
+      res.setHeader('Set-Cookie', sessionCookie(req, result.token));
+      return sendJSON(res, 200, { user: result.user });
+    } catch { return sendJSON(res, 400, { error: 'bad request' }); }
+  }
+
+  if (url === '/api/auth/logout' && req.method === 'POST') {
+    logout(sessionTokenOf(req));
+    res.setHeader('Set-Cookie', clearCookie(req));
+    return sendJSON(res, 200, { ok: true });
+  }
+
+  if (url === '/api/auth/me' && req.method === 'GET') {
+    const user = userFromRequest(req);
+    if (!user) return sendJSON(res, 401, { error: 'unauthorized' });
+    return sendJSON(res, 200, { user: publicUser(user), roles_available: ROLES });
+  }
+
+  // ── User management (admins only) ─────────────────────────────────────
+  if (url === '/api/users') {
+    const me = userFromRequest(req);
+    if (!me) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!can(me, 'admin')) return sendJSON(res, 403, { error: 'forbidden' });
+
+    if (req.method === 'GET') return sendJSON(res, 200, { users: listUsers() });
+
+    if (req.method === 'POST') {
+      if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
+      try {
+        const body = JSON.parse(await readBody(req) || '{}');
+        // One endpoint, an explicit action, so the admin page needs no verbs
+        // the old browsers in the community might mishandle.
+        let result;
+        if (body.action === 'create') result = createUser(body);
+        else if (body.action === 'update') result = updateUser(body.id, body, me.id);
+        else if (body.action === 'delete') result = deleteUser(body.id, me.id);
+        else return sendJSON(res, 400, { error: 'unknown action' });
+        if (result.error) return sendJSON(res, 400, { error: result.error });
+        return sendJSON(res, 200, { ...result, users: listUsers() });
+      } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
+    }
+    return sendJSON(res, 405, { error: 'method not allowed' });
   }
 
   if (url === '/api/content' && req.method === 'POST') {
+    const me = userFromRequest(req);
+    if (!me) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!can(me, 'content')) return sendJSON(res, 403, { error: 'forbidden' });
+    if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
     try {
-      // Auth key travels in the JSON body (not an HTTP header) so a non-ASCII
-      // password (e.g. Hebrew) works — headers can't carry chars outside latin1.
-      const { _key, ...incoming } = JSON.parse(await readBody(req) || '{}');
-      if (!ADMIN_KEY || _key !== ADMIN_KEY) return sendJSON(res, 401, { error: 'unauthorized' });
+      const incoming = JSON.parse(await readBody(req) || '{}');
       const current = effectiveContent();
       const next = { ...current };
       for (const k of EDITABLE) {
