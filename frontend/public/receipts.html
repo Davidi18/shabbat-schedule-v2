@@ -78,53 +78,58 @@
     .ledger-actions .danger { color:#b02121; border-color:#f0cccc; }
     .void-tag { color:#b02121; font-weight:700; font-size:0.8rem; }
 
-    /* The receipt itself: hidden on screen, and the only thing that reaches
-       the printer. Built in-page rather than in a popup so it prints offline
-       and is not swallowed by a popup blocker. */
-    #sheet { display:none; }
+    /* The receipt sheet. Laid out at its real size but parked off-screen, so
+       one set of rules serves both the printer and the image that gets sent
+       to the donor — nothing here is print-only except the page itself.
+       Off-screen rather than display:none, because a hidden element cannot be
+       rasterised. */
+    #sheet {
+      position:fixed; top:0; left:-10000px;
+      width:148mm; background:#fff; color:#1a1a2e;
+    }
+    .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:5mm 9mm; position:relative; }
+    .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:3mm; }
+    .rc-logo { height:18mm; width:auto; }
+    .rc-org { flex:1; }
+    .rc-org-name { font-family:'Frank Ruhl Libre',serif; font-size:19pt; font-weight:700; line-height:1.2; }
+    .rc-org-sub { font-size:9.5pt; color:#6b6480; margin-top:1mm; }
+    .rc-no { text-align:left; font-size:9.5pt; color:#6b6480; }
+    .rc-no b { display:block; font-family:'Frank Ruhl Libre',serif; font-size:16pt; color:#1a1a2e; }
+
+    .rc-title { text-align:center; font-family:'Frank Ruhl Libre',serif; font-size:16pt; font-weight:700; margin:4mm 0 4mm; }
+
+    .rc-line { display:flex; gap:4mm; align-items:baseline; margin-bottom:2.5mm; font-size:12pt; }
+    .rc-key { color:#6b6480; font-size:10.5pt; width:26mm; flex:0 0 auto; }
+    .rc-val { flex:1; border-bottom:1px dotted #bdb6a4; padding-bottom:1mm; font-weight:600; unicode-bidi:plaintext; text-align:right; }
+    .rc-amount .rc-val { font-family:'Frank Ruhl Libre',serif; font-size:17pt; font-weight:700; }
+    .rc-words { font-size:10pt; color:#4a4560; margin:-1.5mm 0 4mm 0; padding-right:30mm; }
+
+    .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:5mm; margin-top:4mm; }
+    /* The stamp. Set as text so it needs no file; a photographed stamp dropped
+       in at /stamp.png takes its place (see the onload below), which is why
+       both live in the same box. */
+    .rc-stamp-box { flex:0 0 auto; text-align:center; }
+    .rc-stamp-img { max-height:30mm; max-width:52mm; width:auto; }
+    .rc-stamp-text {
+      border:1.5pt solid #1a1a2e; border-radius:2mm;
+      padding:2.5mm 5mm; line-height:1.35; color:#1a1a2e;
+    }
+    .rc-stamp-1 { font-family:'Frank Ruhl Libre',serif; font-size:11.5pt; font-weight:700; }
+    .rc-stamp-2 { font-size:8.5pt; font-weight:500; }
+    .rc-stamp-3 { font-size:8.5pt; font-weight:500; letter-spacing:0.5pt; }
+    .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
+    .rc-void {
+      position:absolute; top:34%; right:14%; font-family:'Frank Ruhl Libre',serif;
+      font-size:52pt; font-weight:700; color:rgba(176,33,33,.22);
+      transform:rotate(-18deg); letter-spacing:6pt;
+    }
+
     @media print {
       body { padding:0; background:#fff; }
       body > *:not(#sheet) { display:none !important; }
-      #sheet { display:block; color:#1a1a2e; }
+      /* Back onto the page, and kept whole on one sheet. */
+      #sheet { position:static; margin:0 auto; break-inside:avoid; page-break-inside:avoid; }
       @page { size:A5 landscape; margin:12mm; }
-
-      #sheet { break-inside:avoid; page-break-inside:avoid; max-width:148mm; margin:0 auto; }
-      .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:5mm 9mm; position:relative; }
-      .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:3mm; }
-      .rc-logo { height:18mm; width:auto; }
-      .rc-org { flex:1; }
-      .rc-org-name { font-family:'Frank Ruhl Libre',serif; font-size:19pt; font-weight:700; line-height:1.2; }
-      .rc-org-sub { font-size:9.5pt; color:#6b6480; margin-top:1mm; }
-      .rc-no { text-align:left; font-size:9.5pt; color:#6b6480; }
-      .rc-no b { display:block; font-family:'Frank Ruhl Libre',serif; font-size:16pt; color:#1a1a2e; }
-
-      .rc-title { text-align:center; font-family:'Frank Ruhl Libre',serif; font-size:16pt; font-weight:700; margin:4mm 0 4mm; }
-
-      .rc-line { display:flex; gap:4mm; align-items:baseline; margin-bottom:2.5mm; font-size:12pt; }
-      .rc-key { color:#6b6480; font-size:10.5pt; width:26mm; flex:0 0 auto; }
-      .rc-val { flex:1; border-bottom:1px dotted #bdb6a4; padding-bottom:1mm; font-weight:600; unicode-bidi:plaintext; text-align:right; }
-      .rc-amount .rc-val { font-family:'Frank Ruhl Libre',serif; font-size:17pt; font-weight:700; }
-      .rc-words { font-size:10pt; color:#4a4560; margin:-1.5mm 0 4mm 0; padding-right:30mm; }
-
-      .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:4mm; }
-      /* The stamp. Set as text so it prints sharp and needs no file; a
-         photographed stamp dropped in at /stamp.png takes its place (see the
-         onload below), which is why both live in the same box. */
-      .rc-stamp-box { flex:0 0 auto; text-align:center; }
-      .rc-stamp-img { max-height:30mm; max-width:58mm; width:auto; object-fit:contain; }
-      .rc-stamp-text {
-        border:1.5pt solid #1a1a2e; border-radius:2mm;
-        padding:2.5mm 5mm; line-height:1.35; color:#1a1a2e;
-      }
-      .rc-stamp-1 { font-family:'Frank Ruhl Libre',serif; font-size:11.5pt; font-weight:700; }
-      .rc-stamp-2 { font-size:8.5pt; font-weight:500; }
-      .rc-stamp-3 { font-size:8.5pt; font-weight:500; letter-spacing:0.5pt; }
-      .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
-      .rc-void {
-        position:absolute; top:34%; right:14%; font-family:'Frank Ruhl Libre',serif;
-        font-size:52pt; font-weight:700; color:rgba(176,33,33,.22);
-        transform:rotate(-18deg); letter-spacing:6pt;
-      }
     }
   </style>
 </head>
@@ -201,7 +206,8 @@
         <label>הערות <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
         <input type="text" id="f-note" placeholder="" onkeydown="if(event.key==='Enter')issue()" />
       </div>
-      <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק והדפס</button>
+      <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק ושלח</button>
+      <div class="hint" style="text-align:center;margin-top:8px">הקבלה נשלחת כתמונה. מהפנקס למטה אפשר גם להעתיק אותה או להדפיס.</div>
       <div class="status" id="status"></div>
     </div>
 
@@ -256,6 +262,7 @@
   </div>
 </div>
 
+<script data-cfasync="false" src="/html2canvas.min.js"></script>
 <script data-cfasync="false">
   // Same session as the admin page: an HttpOnly cookie the browser attaches on
   // its own. Nothing here holds a key, and the server checks the receipts role
@@ -384,8 +391,8 @@
     document.querySelectorAll('#type-toggle button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
   }
 
-  // ── Printing ──────────────────────────────────────────────────────────
-  function printReceipt(r) {
+  // ── The sheet ─────────────────────────────────────────────────────────
+  function fillSheet(r) {
     $('s-number').textContent = String(r.number);
     $('s-title').textContent = TYPE_TITLE[r.type] || TYPE_TITLE.donation;
     $('s-name').textContent = r.name;
@@ -395,7 +402,76 @@
     $('s-note').textContent = r.note || '';
     $('s-note-line').style.display = r.note ? 'flex' : 'none';
     $('s-void').style.display = r.voided ? 'block' : 'none';
+  }
+
+  function printReceipt(r) {
+    fillSheet(r);
     window.print();
+  }
+
+  // The receipt as a PNG. Most of these never reach a printer — they are sent
+  // to the donor in a message, where an image opens in the conversation and a
+  // PDF arrives as an attachment nobody opens.
+  async function receiptBlob(r) {
+    fillSheet(r);
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    // A moment for the stamp and logo to settle before the snapshot.
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    const canvas = await html2canvas($('sheet'), {
+      scale: 3, // legible when the recipient zooms in on a phone
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
+      windowWidth: document.documentElement.clientWidth,
+    });
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  const receiptFileName = (r) => 'קבלה-' + r.number + '.png';
+
+  async function shareReceipt(r) {
+    status('status', 'מכין תמונה...', 'loading');
+    try {
+      const blob = await receiptBlob(r);
+      const file = new File([blob], receiptFileName(r), { type: 'image/png' });
+      const title = (TYPE_TITLE[r.type] || '') + ' · ' + r.name;
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title });
+        clearStatus('status');
+        return;
+      }
+      // No share sheet (most desktops): save it and let them attach it.
+      downloadBlob(blob, receiptFileName(r));
+      status('status', 'התמונה נשמרה בהורדות. אפשר לצרף אותה להודעה.', 'success');
+    } catch (e) {
+      if (e && e.name === 'AbortError') { clearStatus('status'); return; } // they closed the share sheet
+      status('status', 'לא הצלחתי להכין את התמונה: ' + e.message, 'error');
+    }
+  }
+
+  // Straight onto the clipboard, for WhatsApp Web and the desktop app: copy
+  // here, paste into the conversation, done.
+  async function copyReceipt(r) {
+    status('status', 'מכין תמונה...', 'loading');
+    try {
+      const blob = await receiptBlob(r);
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error('הדפדפן לא תומך בהעתקת תמונה');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      status('status', 'הקבלה הועתקה. הדבק אותה בשיחה בוואטסאפ.', 'success');
+    } catch (e) {
+      status('status', 'לא הצלחתי להעתיק: ' + e.message + '. נסה "שתף" במקום.', 'error');
+    }
+  }
+
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   // ── The book ──────────────────────────────────────────────────────────
@@ -511,9 +587,22 @@
 
       const actions = document.createElement('div');
       actions.className = 'ledger-actions';
+      const shareBtn = document.createElement('button');
+      shareBtn.type = 'button';
+      shareBtn.textContent = '📤 שלח';
+      shareBtn.onclick = () => shareReceipt(r);
+      actions.appendChild(shareBtn);
+
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.textContent = '📋 העתק';
+      copyBtn.onclick = () => copyReceipt(r);
+      actions.appendChild(copyBtn);
+
       const printBtn = document.createElement('button');
       printBtn.type = 'button';
-      printBtn.textContent = 'הדפס שוב';
+      printBtn.textContent = '🖨️';
+      printBtn.title = 'הדפסה';
       printBtn.onclick = () => printReceipt(r);
       actions.appendChild(printBtn);
 
@@ -550,11 +639,11 @@
       book = data.receipts;
       buildPeriods();
       applyFilter();
-      status('status', 'קבלה #' + data.receipt.number + ' הופקה. פותח הדפסה...', 'success');
       $('f-name').value = '';
       $('f-amount').value = '';
       $('f-note').value = '';
-      printReceipt(data.receipt);
+      status('status', 'קבלה #' + data.receipt.number + ' הופקה.', 'success');
+      await shareReceipt(data.receipt);
     } catch (e) {
       if (e.message !== 'unauthorized') status('status', 'שגיאה: ' + e.message, 'error');
     } finally {

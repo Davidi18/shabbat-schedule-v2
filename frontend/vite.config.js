@@ -48,8 +48,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2}'],
         // The signed-in pages are not part of the offline app. Precaching them
         // would serve a stale sign-in screen against a server whose accounts
-        // model has moved on.
-        globIgnores: ['admin.html', 'receipts.html'],
+        // model has moved on, and html2canvas is 200KB that only the gabbai
+        // issuing a receipt ever needs — not something to push to every phone
+        // in the community.
+        globIgnores: ['admin.html', 'receipts.html', 'html2canvas.min.js'],
         cleanupOutdatedCaches: true,
         // Take over open tabs as soon as a new build is cached, so a phone
         // that resumes the PWA doesn't paint last week's bundle.
