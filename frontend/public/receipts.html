@@ -206,8 +206,8 @@
         <label>הערות <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
         <input type="text" id="f-note" placeholder="" onkeydown="if(event.key==='Enter')issue()" />
       </div>
-      <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק ושלח</button>
-      <div class="hint" style="text-align:center;margin-top:8px">הקבלה נשלחת כתמונה. מהפנקס למטה אפשר גם להעתיק אותה או להדפיס.</div>
+      <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק והעתק לוואטסאפ</button>
+      <div class="hint" id="issue-hint" style="text-align:center;margin-top:8px"></div>
       <div class="status" id="status"></div>
     </div>
 
@@ -429,37 +429,57 @@
 
   const receiptFileName = (r) => 'קבלה-' + r.number + '.png';
 
+  // A phone has a share sheet that hands the file to WhatsApp. A desktop's
+  // share sheet leads to the WhatsApp app, not to the web client people
+  // actually use, so there the clipboard is the shorter road.
+  const hasFileShare = () => {
+    try {
+      return !!(navigator.canShare && navigator.canShare({
+        files: [new File([new Blob([''], { type: 'image/png' })], 'x.png', { type: 'image/png' })],
+      }));
+    } catch { return false; }
+  };
+  const isDesktop = () => !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   async function shareReceipt(r) {
+    if (isDesktop()) return copyReceipt(r);
+    if (!hasFileShare()) return copyReceipt(r);
     status('status', 'מכין תמונה...', 'loading');
     try {
       const blob = await receiptBlob(r);
       const file = new File([blob], receiptFileName(r), { type: 'image/png' });
-      const title = (TYPE_TITLE[r.type] || '') + ' · ' + r.name;
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title });
-        clearStatus('status');
-        return;
-      }
-      // No share sheet (most desktops): save it and let them attach it.
-      downloadBlob(blob, receiptFileName(r));
-      status('status', 'התמונה נשמרה בהורדות. אפשר לצרף אותה להודעה.', 'success');
+      await navigator.share({ files: [file], title: (TYPE_TITLE[r.type] || '') + ' · ' + r.name });
+      clearStatus('status');
     } catch (e) {
       if (e && e.name === 'AbortError') { clearStatus('status'); return; } // they closed the share sheet
-      status('status', 'לא הצלחתי להכין את התמונה: ' + e.message, 'error');
+      status('status', 'לא הצלחתי לשתף: ' + e.message, 'error');
     }
   }
 
-  // Straight onto the clipboard, for WhatsApp Web and the desktop app: copy
-  // here, paste into the conversation, done.
+  // Straight onto the clipboard, for WhatsApp Web: copy here, paste into the
+  // conversation. The blob is handed over as a promise rather than awaited
+  // first — building the image takes a second, and a clipboard write that
+  // lands after the click has ended is refused by the browser. That refusal
+  // was being reported as success.
   async function copyReceipt(r) {
+    if (!navigator.clipboard || !window.ClipboardItem) return saveReceipt(r, 'הדפדפן לא תומך בהעתקת תמונה');
     status('status', 'מכין תמונה...', 'loading');
     try {
-      const blob = await receiptBlob(r);
-      if (!navigator.clipboard || !window.ClipboardItem) throw new Error('הדפדפן לא תומך בהעתקת תמונה');
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      status('status', 'הקבלה הועתקה. הדבק אותה בשיחה בוואטסאפ.', 'success');
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': receiptBlob(r) })]);
     } catch (e) {
-      status('status', 'לא הצלחתי להעתיק: ' + e.message + '. נסה "שתף" במקום.', 'error');
+      // Firefox has no image clipboard, and any browser refuses while the page
+      // is not focused. Either way the receipt should still reach the donor.
+      return saveReceipt(r, e.message);
+    }
+    status('status', '✅ הקבלה הועתקה. פתח את השיחה בוואטסאפ והדבק (Ctrl+V).', 'success');
+  }
+
+  async function saveReceipt(r, why) {
+    try {
+      downloadBlob(await receiptBlob(r), receiptFileName(r));
+      status('status', 'ההעתקה לא נתמכה כאן (' + why + '), אז הקבלה ירדה כקובץ. אפשר לגרור אותה לשיחה.', 'success');
+    } catch (e) {
+      status('status', 'לא הצלחתי להכין את התמונה: ' + e.message, 'error');
     }
   }
 
@@ -587,17 +607,30 @@
 
       const actions = document.createElement('div');
       actions.className = 'ledger-actions';
-      const shareBtn = document.createElement('button');
-      shareBtn.type = 'button';
-      shareBtn.textContent = '📤 שלח';
-      shareBtn.onclick = () => shareReceipt(r);
-      actions.appendChild(shareBtn);
-
       const copyBtn = document.createElement('button');
       copyBtn.type = 'button';
-      copyBtn.textContent = '📋 העתק';
+      copyBtn.textContent = '📋 העתק לוואטסאפ';
       copyBtn.onclick = () => copyReceipt(r);
       actions.appendChild(copyBtn);
+
+      if (!isDesktop() && hasFileShare()) {
+        const shareBtn = document.createElement('button');
+        shareBtn.type = 'button';
+        shareBtn.textContent = '📤 שלח';
+        shareBtn.onclick = () => shareReceipt(r);
+        actions.appendChild(shareBtn);
+      }
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.textContent = '⬇️';
+      saveBtn.title = 'שמירה כקובץ';
+      saveBtn.onclick = async () => {
+        status('status', 'מכין תמונה...', 'loading');
+        downloadBlob(await receiptBlob(r), receiptFileName(r));
+        status('status', 'הקבלה ירדה כקובץ.', 'success');
+      };
+      actions.appendChild(saveBtn);
 
       const printBtn = document.createElement('button');
       printBtn.type = 'button';
@@ -688,6 +721,10 @@
     if (!allowed) return;
     $('who').textContent = me.name;
     setType('donation');
+    $('issue-btn').textContent = isDesktop() ? '🧾 הפק והעתק לוואטסאפ' : '🧾 הפק ושלח';
+    $('issue-hint').textContent = isDesktop()
+      ? 'הקבלה תועתק כתמונה — פתח את השיחה בוואטסאפ והדבק.'
+      : 'הקבלה תיפתח בתיבת השיתוף של הטלפון.';
     $('f-date').value = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
     await loadBook();
   }
