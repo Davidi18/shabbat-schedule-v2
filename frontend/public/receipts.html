@@ -96,7 +96,18 @@
       .rc-words { font-size:10pt; color:#4a4560; margin:-2mm 0 5mm 0; padding-right:30mm; }
 
       .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:7mm; }
-      .rc-stamp { max-height:26mm; max-width:52mm; width:auto; object-fit:contain; }
+      /* The stamp. Set as text so it prints sharp and needs no file; a
+         photographed stamp dropped in at /stamp.png takes its place (see the
+         onload below), which is why both live in the same box. */
+      .rc-stamp-box { flex:0 0 auto; text-align:center; }
+      .rc-stamp-img { max-height:26mm; max-width:52mm; width:auto; object-fit:contain; }
+      .rc-stamp-text {
+        border:1.5pt solid #1a1a2e; border-radius:2mm;
+        padding:2.5mm 5mm; line-height:1.35; color:#1a1a2e;
+      }
+      .rc-stamp-1 { font-family:'Frank Ruhl Libre',serif; font-size:11.5pt; font-weight:700; }
+      .rc-stamp-2 { font-size:8.5pt; font-weight:500; }
+      .rc-stamp-3 { font-size:8.5pt; font-weight:500; letter-spacing:0.5pt; }
       .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
       .rc-void {
         position:fixed; top:38%; right:18%; font-family:'Frank Ruhl Libre',serif;
@@ -211,7 +222,15 @@
         בתודה ובברכה, ויהי רצון שתזכו לראות ברכה בכל מעשי ידיכם.<br />
         אישור זה מעיד על קבלת הסכום בלבד ואינו קבלה לצורכי מס.
       </div>
-      <img class="rc-stamp" src="/stamp.png" alt="" onerror="this.style.display='none'" />
+      <div class="rc-stamp-box">
+        <img class="rc-stamp-img" src="/stamp.png" alt="" style="display:none"
+             onload="this.style.display='block';document.getElementById('stamp-text').style.display='none'" />
+        <div class="rc-stamp-text" id="stamp-text">
+          <div class="rc-stamp-1">בית הכנסת האשכנזי</div>
+          <div class="rc-stamp-2">הר חומה שלב ג׳ ירושלים (ע״ר)</div>
+          <div class="rc-stamp-3">580722510</div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="rc-void" id="s-void" style="display:none">מבוטל</div>
