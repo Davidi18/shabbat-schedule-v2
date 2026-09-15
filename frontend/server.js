@@ -287,6 +287,12 @@ const server = http.createServer(async (req, res) => {
     } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
   }
 
+  // An unmatched /api/ path is a mistake, never a page. Falling through to the
+  // static handler answered it with the SPA shell instead: /api/login, removed
+  // with the shared password, was still replying 200 and a page of HTML, which
+  // reads like a successful sign-in to anything checking the status code.
+  if (url.startsWith('/api/')) return sendJSON(res, 404, { error: 'not found' });
+
   return serveStatic(req, res);
 });
 
