@@ -46,10 +46,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,ico,woff2}'],
-        // The admin page signs people in and is not part of the offline app.
-        // Precaching it would serve a stale sign-in screen against a server
-        // whose accounts model has moved on.
-        globIgnores: ['admin.html'],
+        // The signed-in pages are not part of the offline app. Precaching them
+        // would serve a stale sign-in screen against a server whose accounts
+        // model has moved on.
+        globIgnores: ['admin.html', 'receipts.html'],
         cleanupOutdatedCaches: true,
         // Take over open tabs as soon as a new build is cached, so a phone
         // that resumes the PWA doesn't paint last week's bundle.
@@ -63,9 +63,9 @@ export default defineConfig({
             // Gabbai content + weekly halacha: always try the network first so
             // the page shows current data, but fall back to the last response
             // when offline (the prayer list stays visible either way).
-            // Only the public reads. A session or a user list answered from
-            // cache would show a signed-out gabbai as signed in, or hide a
-            // permission that has just been taken away.
+            // The public reads only — a session, a user list or the receipt
+            // book answered from cache would show a signed-out gabbai as
+            // signed in, or hide a change that has just been made.
             urlPattern: ({ url }) => url.pathname === '/api/content' || url.pathname === '/api/dvar',
             handler: 'NetworkFirst',
             options: {

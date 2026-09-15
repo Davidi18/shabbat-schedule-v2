@@ -18,6 +18,7 @@ import {
   initAuth, login, logout, userFromRequest, sessionTokenOf, sessionCookie, clearCookie,
   clientAddr, can, publicUser, listUsers, createUser, updateUser, deleteUser, ROLES,
 } from './auth.js';
+import { initReceipts, listReceipts, createReceipt, voidReceipt, receiptTotals } from './receipts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,7 @@ const SEED_FILE = path.join(DIST, 'data.json'); // bundled default content
 // Accounts live on the data volume. On a site that has none yet, the password
 // the gabbai already uses becomes the first admin account (see auth.js).
 initAuth(DATA_DIR);
+initReceipts(DATA_DIR);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -212,6 +214,30 @@ const server = http.createServer(async (req, res) => {
     const user = userFromRequest(req);
     if (!user) return sendJSON(res, 401, { error: 'unauthorized' });
     return sendJSON(res, 200, { user: publicUser(user), roles_available: ROLES });
+  }
+
+  // ── Receipt book ──────────────────────────────────────────────────────
+  if (url === '/api/receipts') {
+    const me = userFromRequest(req);
+    if (!me) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!can(me, 'receipts')) return sendJSON(res, 403, { error: 'forbidden' });
+
+    if (req.method === 'GET') {
+      return sendJSON(res, 200, { receipts: listReceipts(), totals: receiptTotals() });
+    }
+    if (req.method === 'POST') {
+      if (!jsonRequest(req)) return sendJSON(res, 415, { error: 'expected application/json' });
+      try {
+        const body = JSON.parse(await readBody(req) || '{}');
+        let result;
+        if (body.action === 'create') result = createReceipt(body, me);
+        else if (body.action === 'void') result = voidReceipt(body.number, body.reason, me);
+        else return sendJSON(res, 400, { error: 'unknown action' });
+        if (result.error) return sendJSON(res, 400, { error: result.error });
+        return sendJSON(res, 200, { ...result, receipts: listReceipts(), totals: receiptTotals() });
+      } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
+    }
+    return sendJSON(res, 405, { error: 'method not allowed' });
   }
 
   // ── User management (admins only) ─────────────────────────────────────

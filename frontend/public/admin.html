@@ -191,6 +191,15 @@
       <div class="status" id="status"></div>
     </div>
 
+    <!-- Receipts -->
+    <div id="section-receipts" style="display:none">
+      <div class="card">
+        <h2>קבלות</h2>
+        <div class="sub" style="margin:0 0 12px">הפקת אישורי קבלה על תרומות ודמי חבר, והפנקס של כל מה שהופק.</div>
+        <a class="btn btn-primary" href="/receipts.html" style="display:block;text-align:center;text-decoration:none;line-height:1.2">🧾 פתח את פנקס הקבלות</a>
+      </div>
+    </div>
+
     <!-- Accounts -->
     <div id="section-users" style="display:none">
       <div class="card">
@@ -509,10 +518,12 @@
       : '· ללא הרשאות';
 
     const content = may('content');
+    const receipts = may('receipts');
     const admin = may('admin');
     $('section-content').style.display = content ? 'block' : 'none';
+    $('section-receipts').style.display = receipts ? 'block' : 'none';
     $('section-users').style.display = admin ? 'block' : 'none';
-    $('section-none').style.display = (content || admin) ? 'none' : 'block';
+    $('section-none').style.display = (content || receipts || admin) ? 'none' : 'block';
     $('sub').style.display = content ? 'block' : 'none';
 
     if (content) await loadContent();

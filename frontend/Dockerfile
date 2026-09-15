@@ -9,7 +9,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=build /app/dist ./dist
-COPY server.js dvar.js auth.js ./
+COPY server.js dvar.js auth.js receipts.js ./
 ENV PORT=3000
 ENV DATA_DIR=/data
 EXPOSE 3000

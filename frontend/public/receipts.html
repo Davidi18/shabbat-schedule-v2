@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>קבלות · קהילת אורות ישראל</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#f4f1ea; --card:#fff; --ink:#2b2b45; --muted:#8b8397; --line:#e6e0d3; --gold:#b98a2e; --primary:#1a1a2e; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:'Rubik',sans-serif; padding:20px; }
+    .wrap { max-width:640px; margin:0 auto; }
+    h1 { font-size:1.4rem; margin:6px 0 2px; }
+    h2 { font-size:1.05rem; margin:0 0 10px; }
+    .sub { color:var(--muted); font-size:0.9rem; margin-bottom:18px; line-height:1.5; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 2px 10px rgba(20,20,50,.04); }
+    .field { margin-bottom:14px; }
+    .field:last-child { margin-bottom:0; }
+    .field label { display:block; font-weight:700; font-size:0.92rem; margin-bottom:6px; }
+    .field .hint { font-weight:400; color:var(--muted); font-size:0.8rem; }
+    .field input { width:100%; padding:11px 12px; border:1px solid #ddd; border-radius:10px; font-family:'Rubik',sans-serif; font-size:0.95rem; direction:rtl; background:#fff; }
+    .field input.ltr { direction:ltr; text-align:right; }
+    .row2 { display:flex; gap:12px; }
+    .row2 > * { flex:1; min-width:0; }
+    .toggle { display:flex; gap:8px; }
+    .toggle button { flex:1; padding:10px; border:1px solid #ddd; border-radius:10px; background:#fff; cursor:pointer; font-family:'Rubik',sans-serif; font-size:0.9rem; font-weight:500; }
+    .toggle button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .btn { width:100%; padding:13px; border:none; border-radius:12px; font-family:'Rubik',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; margin-top:6px; }
+    .btn-primary { background:var(--gold); color:#fff; }
+    .btn-primary:disabled { opacity:.55; cursor:default; }
+    .status { margin-top:12px; padding:11px 13px; border-radius:10px; font-size:0.9rem; display:none; }
+    .status.show { display:block; }
+    .status.loading { background:#eef1f8; color:#3a4a7a; }
+    .status.success { background:#eaf7ee; color:#1f7a3d; }
+    .status.error { background:#fdecec; color:#b02121; }
+    .brand { font-size:0.8rem; color:var(--muted); text-align:center; margin-top:8px; }
+    .empty { color:var(--muted); font-size:0.9rem; }
+    .backlink { display:inline-block; margin-bottom:10px; font-size:0.86rem; color:var(--muted); }
+
+    .userbar {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:#fff; border:1px solid var(--line); border-radius:14px;
+      padding:10px 14px; margin-bottom:16px; font-size:0.9rem;
+    }
+    .userbar .who { font-weight:700; }
+    .userbar button { border:none; background:transparent; color:var(--muted); font-family:'Rubik',sans-serif; font-size:0.85rem; cursor:pointer; text-decoration:underline; padding:4px; }
+
+    /* Running totals, so the gabbai can see the book add up at a glance. */
+    .totals { display:flex; gap:10px; margin-bottom:16px; }
+    .total-box { flex:1; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; text-align:center; }
+    .total-label { font-size:0.78rem; color:var(--muted); }
+    .total-value { font-size:1.15rem; font-weight:700; font-family:'Frank Ruhl Libre',serif; }
+
+    .search { margin-bottom:12px; }
+    .ledger-row { border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:9px; }
+    .ledger-row.is-void { opacity:.55; background:#faf8f3; }
+    .ledger-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+    .ledger-name { font-weight:700; }
+    .ledger-sum { font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:1.05rem; white-space:nowrap; }
+    .ledger-meta { color:var(--muted); font-size:0.8rem; margin-top:3px; }
+    .ledger-actions { display:flex; gap:8px; margin-top:9px; }
+    .ledger-actions button {
+      border:1px solid #ddd; background:#fff; border-radius:9px; padding:6px 11px;
+      font-family:'Rubik',sans-serif; font-size:0.82rem; font-weight:500; cursor:pointer; color:var(--ink);
+    }
+    .ledger-actions .danger { color:#b02121; border-color:#f0cccc; }
+    .void-tag { color:#b02121; font-weight:700; font-size:0.8rem; }
+
+    /* The receipt itself: hidden on screen, and the only thing that reaches
+       the printer. Built in-page rather than in a popup so it prints offline
+       and is not swallowed by a popup blocker. */
+    #sheet { display:none; }
+    @media print {
+      body { padding:0; background:#fff; }
+      body > *:not(#sheet) { display:none !important; }
+      #sheet { display:block; color:#1a1a2e; }
+      @page { size:A5 landscape; margin:12mm; }
+
+      .rc-frame { border:2px solid var(--gold); border-radius:4px; padding:8mm 10mm; height:100%; }
+      .rc-head { display:flex; align-items:center; gap:6mm; border-bottom:1px solid var(--line); padding-bottom:4mm; }
+      .rc-logo { height:22mm; width:auto; }
+      .rc-org { flex:1; }
+      .rc-org-name { font-family:'Frank Ruhl Libre',serif; font-size:19pt; font-weight:700; line-height:1.2; }
+      .rc-org-sub { font-size:9.5pt; color:#6b6480; margin-top:1mm; }
+      .rc-no { text-align:left; font-size:9.5pt; color:#6b6480; }
+      .rc-no b { display:block; font-family:'Frank Ruhl Libre',serif; font-size:16pt; color:#1a1a2e; }
+
+      .rc-title { text-align:center; font-family:'Frank Ruhl Libre',serif; font-size:16pt; font-weight:700; margin:6mm 0 5mm; }
+
+      .rc-line { display:flex; gap:4mm; align-items:baseline; margin-bottom:4mm; font-size:12pt; }
+      .rc-key { color:#6b6480; font-size:10.5pt; width:26mm; flex:0 0 auto; }
+      .rc-val { flex:1; border-bottom:1px dotted #bdb6a4; padding-bottom:1mm; font-weight:600; unicode-bidi:plaintext; }
+      .rc-amount .rc-val { font-family:'Frank Ruhl Libre',serif; font-size:17pt; font-weight:700; }
+      .rc-words { font-size:10pt; color:#4a4560; margin:-2mm 0 5mm 0; padding-right:30mm; }
+
+      .rc-foot { display:flex; justify-content:space-between; align-items:flex-end; gap:8mm; margin-top:7mm; }
+      .rc-sign { width:55mm; text-align:center; font-size:9.5pt; color:#6b6480; border-top:1px solid #bdb6a4; padding-top:1.5mm; }
+      .rc-note { flex:1; font-size:8.5pt; color:#7a7490; line-height:1.5; }
+      .rc-void {
+        position:fixed; top:38%; right:18%; font-family:'Frank Ruhl Libre',serif;
+        font-size:52pt; font-weight:700; color:rgba(176,33,33,.22);
+        transform:rotate(-18deg); letter-spacing:6pt;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="/admin.html">→ חזרה לניהול</a>
+  <h1>קבלות · תרומות ודמי חבר</h1>
+
+  <!-- Sign in -->
+  <div class="card" id="login-card" style="display:none">
+    <div class="field">
+      <label>שם משתמש</label>
+      <input type="text" id="u" class="ltr" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>סיסמה</label>
+      <input type="password" id="pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">כניסה</button>
+    <div class="status" id="login-status"></div>
+  </div>
+
+  <!-- No permission -->
+  <div class="card" id="no-access" style="display:none">
+    <div class="empty">לחשבון שלך אין הרשאת קבלות. בקש ממנהל המערכת לפתוח לך גישה.</div>
+  </div>
+
+  <!-- The book -->
+  <div id="app" style="display:none">
+    <div class="userbar">
+      <span class="who" id="who"></span>
+      <button type="button" onclick="doLogout()">התנתק</button>
+    </div>
+
+    <div class="totals">
+      <div class="total-box"><div class="total-label">תרומות</div><div class="total-value" id="t-donation">—</div></div>
+      <div class="total-box"><div class="total-label">דמי חבר</div><div class="total-value" id="t-membership">—</div></div>
+      <div class="total-box"><div class="total-label">קבלות</div><div class="total-value" id="t-count">—</div></div>
+    </div>
+
+    <div class="card">
+      <h2>הפקת קבלה</h2>
+      <div class="field">
+        <label>סוג</label>
+        <div class="toggle" id="type-toggle">
+          <button type="button" data-val="donation" onclick="setType('donation')">תרומה</button>
+          <button type="button" data-val="membership" onclick="setType('membership')">דמי חבר</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>שם התורם</label>
+        <input type="text" id="f-name" placeholder="למשל: משה בן דוד כהן" onkeydown="if(event.key==='Enter')issue()" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>סכום <span class="hint">(₪)</span></label>
+          <input type="text" inputmode="decimal" id="f-amount" class="ltr" placeholder="180" onkeydown="if(event.key==='Enter')issue()" />
+        </div>
+        <div class="field">
+          <label>תאריך</label>
+          <input type="date" id="f-date" class="ltr" />
+        </div>
+      </div>
+      <div class="field">
+        <label>לציון <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
+        <input type="text" id="f-note" placeholder="" onkeydown="if(event.key==='Enter')issue()" />
+      </div>
+      <button class="btn btn-primary" id="issue-btn" onclick="issue()">🧾 הפק והדפס</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>הפנקס</h2>
+      <div class="field search">
+        <input type="text" id="q" placeholder="חיפוש לפי שם או מספר" oninput="renderLedger()" />
+      </div>
+      <div id="ledger"></div>
+    </div>
+  </div>
+
+  <div class="brand">קהילת אורות ישראל 🦾</div>
+</div>
+
+<!-- The printable receipt. Filled in before window.print(). -->
+<div id="sheet">
+  <div class="rc-frame">
+    <div class="rc-head">
+      <img class="rc-logo" src="/logo.jpg" alt="" />
+      <div class="rc-org">
+        <div class="rc-org-name">קהילת אורות ישראל</div>
+        <div class="rc-org-sub">בית הכנסת האשכנזי · הר חומה שלב ג׳, ירושלים</div>
+      </div>
+      <div class="rc-no">מספר<b id="s-number"></b></div>
+    </div>
+
+    <div class="rc-title" id="s-title"></div>
+
+    <div class="rc-line"><span class="rc-key">התקבל מאת</span><span class="rc-val" id="s-name"></span></div>
+    <div class="rc-line rc-amount"><span class="rc-key">סך של</span><span class="rc-val" id="s-amount"></span></div>
+    <div class="rc-words" id="s-words"></div>
+    <div class="rc-line"><span class="rc-key">בתאריך</span><span class="rc-val" id="s-date"></span></div>
+    <div class="rc-line" id="s-note-line"><span class="rc-key">לציון</span><span class="rc-val" id="s-note"></span></div>
+
+    <div class="rc-foot">
+      <div class="rc-note">
+        בתודה ובברכה, ויהי רצון שתזכו לראות ברכה בכל מעשי ידיכם.<br />
+        אישור זה מעיד על קבלת הסכום בלבד ואינו קבלה לצורכי מס.
+      </div>
+      <div class="rc-sign">חתימת הגבאי</div>
+    </div>
+  </div>
+  <div class="rc-void" id="s-void" style="display:none">מבוטל</div>
+</div>
+
+<script data-cfasync="false">
+  // Same session as the admin page: an HttpOnly cookie the browser attaches on
+  // its own. Nothing here holds a key, and the server checks the receipts role
+  // on every call.
+  let me = null;
+  let book = [];
+  let type = 'donation';
+  const TYPE_TITLE = { donation: 'אישור קבלת תרומה', membership: 'אישור קבלת דמי חבר' };
+  const TYPE_SHORT = { donation: 'תרומה', membership: 'דמי חבר' };
+  const $ = (id) => document.getElementById(id);
+  const status = (el, msg, kind) => { const e = $(el); e.className = 'status show ' + kind; e.innerText = msg; };
+  const clearStatus = (el) => { $(el).className = 'status'; };
+
+  async function api(url, options) {
+    const opts = Object.assign({ cache: 'no-store' }, options);
+    if (opts.body !== undefined) {
+      opts.method = 'POST';
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = JSON.stringify(opts.body);
+    }
+    const r = await fetch(url, opts);
+    let data = null;
+    try { data = await r.json(); } catch { /* empty body */ }
+    if (r.status === 401) { showLogin('ההתחברות פגה. התחבר שוב.'); throw new Error('unauthorized'); }
+    if (!r.ok) throw new Error((data && data.error) || ('HTTP ' + r.status));
+    return data;
+  }
+
+  const shekels = (n) =>
+    '₪' + n.toLocaleString('he-IL', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+
+  // The amount spelled out, the way a receipt book does it, so a figure cannot
+  // be quietly altered after the fact. Hebrew numerals are gendered; שקל is
+  // masculine and אגורה feminine, hence the two small tables.
+  const ONES_M = ['', 'אחד', 'שניים', 'שלושה', 'ארבעה', 'חמישה', 'שישה', 'שבעה', 'שמונה', 'תשעה'];
+  const ONES_F = ['', 'אחת', 'שתיים', 'שלוש', 'ארבע', 'חמש', 'שש', 'שבע', 'שמונה', 'תשע'];
+  const TEENS_M = ['עשרה', 'אחד עשר', 'שנים עשר', 'שלושה עשר', 'ארבעה עשר', 'חמישה עשר', 'שישה עשר', 'שבעה עשר', 'שמונה עשר', 'תשעה עשר'];
+  const TEENS_F = ['עשר', 'אחת עשרה', 'שתים עשרה', 'שלוש עשרה', 'ארבע עשרה', 'חמש עשרה', 'שש עשרה', 'שבע עשרה', 'שמונה עשרה', 'תשע עשרה'];
+  const TENS = ['', '', 'עשרים', 'שלושים', 'ארבעים', 'חמישים', 'שישים', 'שבעים', 'שמונים', 'תשעים'];
+  const HUNDREDS = ['', 'מאה', 'מאתיים', 'שלוש מאות', 'ארבע מאות', 'חמש מאות', 'שש מאות', 'שבע מאות', 'שמונה מאות', 'תשע מאות'];
+  // Thousands take the construct form: שלושת אלפים, not שלושה אלפים.
+  const THOUSAND_CONSTRUCT = ['', '', '', 'שלושת', 'ארבעת', 'חמשת', 'ששת', 'שבעת', 'שמונת', 'תשעת', 'עשרת'];
+
+  function underThousand(n, masculine) {
+    const ones = masculine ? ONES_M : ONES_F;
+    const teens = masculine ? TEENS_M : TEENS_F;
+    const parts = [];
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    if (h) parts.push(HUNDREDS[h]);
+    if (rest >= 10 && rest < 20) parts.push(teens[rest - 10]);
+    else {
+      const t = Math.floor(rest / 10);
+      const o = rest % 10;
+      if (t) parts.push(TENS[t]);
+      if (o) parts.push(ones[o]);
+    }
+    return joinHe(parts);
+  }
+
+  // Hebrew joins the last item with "ו" — "מאה ועשרים", "עשרים ואחד".
+  function joinHe(parts) {
+    if (parts.length <= 1) return parts.join('');
+    return parts.slice(0, -1).join(' ') + ' ו' + parts[parts.length - 1];
+  }
+
+  function spellNumber(n, masculine) {
+    if (n === 0) return 'אפס';
+    const parts = [];
+    const millions = Math.floor(n / 1000000);
+    const thousands = Math.floor((n % 1000000) / 1000);
+    const rest = n % 1000;
+    if (millions) parts.push(millions === 1 ? 'מיליון' : underThousand(millions, true) + ' מיליון');
+    if (thousands) {
+      if (thousands === 1) parts.push('אלף');
+      else if (thousands === 2) parts.push('אלפיים');
+      else if (thousands <= 10) parts.push(THOUSAND_CONSTRUCT[thousands] + ' אלפים');
+      // אלף is masculine, so eleven thousand and up count in the masculine.
+      else parts.push(underThousand(thousands, true) + ' אלף');
+    }
+    if (rest) parts.push(underThousand(rest, masculine));
+    return joinHe(parts);
+  }
+
+  // One and two take the counted noun first — "שקל חדש אחד", "שני שקלים" —
+  // rather than the plain numeral the larger amounts use.
+  function amountInWords(amount) {
+    const whole = Math.floor(amount);
+    const agorot = Math.round((amount - whole) * 100);
+    const parts = [];
+    if (whole === 1) parts.push('שקל חדש אחד');
+    else if (whole === 2) parts.push('שני שקלים חדשים');
+    else if (whole) parts.push(spellNumber(whole, true) + ' שקלים חדשים');
+    if (agorot === 1) parts.push('אגורה אחת');
+    else if (agorot === 2) parts.push('שתי אגורות');
+    else if (agorot) parts.push(spellNumber(agorot, false) + ' אגורות');
+    return parts.length === 2 ? parts[0] + ' ו' + parts[1] : parts[0] || 'אפס';
+  }
+
+  const heDate = (iso) =>
+    new Date(iso + 'T12:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  function setType(v) {
+    type = v;
+    document.querySelectorAll('#type-toggle button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
+  }
+
+  // ── Printing ──────────────────────────────────────────────────────────
+  function printReceipt(r) {
+    $('s-number').textContent = String(r.number);
+    $('s-title').textContent = TYPE_TITLE[r.type] || TYPE_TITLE.donation;
+    $('s-name').textContent = r.name;
+    $('s-amount').textContent = shekels(r.amount);
+    $('s-words').textContent = '(' + amountInWords(r.amount) + ')';
+    $('s-date').textContent = heDate(r.date);
+    $('s-note').textContent = r.note || '';
+    $('s-note-line').style.display = r.note ? 'flex' : 'none';
+    $('s-void').style.display = r.voided ? 'block' : 'none';
+    window.print();
+  }
+
+  // ── The book ──────────────────────────────────────────────────────────
+  function renderTotals(t) {
+    $('t-donation').textContent = shekels(t.donation);
+    $('t-membership').textContent = shekels(t.membership);
+    $('t-count').textContent = String(t.count);
+  }
+
+  function renderLedger() {
+    const q = $('q').value.trim().toLowerCase();
+    const rows = book.filter((r) =>
+      !q || r.name.toLowerCase().includes(q) || String(r.number).includes(q));
+    const box = $('ledger');
+    box.innerHTML = '';
+    if (!rows.length) {
+      box.innerHTML = '<div class="empty">' + (book.length ? 'אין תוצאות לחיפוש.' : 'עדיין לא הופקו קבלות.') + '</div>';
+      return;
+    }
+    rows.forEach((r) => {
+      const row = document.createElement('div');
+      row.className = 'ledger-row' + (r.voided ? ' is-void' : '');
+
+      const top = document.createElement('div');
+      top.className = 'ledger-top';
+      const name = document.createElement('span');
+      name.className = 'ledger-name';
+      name.textContent = '#' + r.number + ' · ' + r.name;
+      const sum = document.createElement('span');
+      sum.className = 'ledger-sum';
+      sum.textContent = shekels(r.amount);
+      top.appendChild(name);
+      top.appendChild(sum);
+      row.appendChild(top);
+
+      const meta = document.createElement('div');
+      meta.className = 'ledger-meta';
+      meta.textContent = TYPE_SHORT[r.type] + ' · ' + heDate(r.date) + ' · הופק על ידי ' + r.issued_by_name;
+      if (r.note) meta.textContent += ' · ' + r.note;
+      row.appendChild(meta);
+
+      if (r.voided) {
+        const v = document.createElement('div');
+        v.className = 'ledger-meta';
+        v.innerHTML = '<span class="void-tag">מבוטלת</span>';
+        if (r.void_reason) v.innerHTML += ' · ' + escapeHtml(r.void_reason);
+        if (r.voided_by_name) v.innerHTML += ' · ' + escapeHtml(r.voided_by_name);
+        row.appendChild(v);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'ledger-actions';
+      const printBtn = document.createElement('button');
+      printBtn.type = 'button';
+      printBtn.textContent = 'הדפס שוב';
+      printBtn.onclick = () => printReceipt(r);
+      actions.appendChild(printBtn);
+
+      if (!r.voided) {
+        const voidBtn = document.createElement('button');
+        voidBtn.type = 'button';
+        voidBtn.className = 'danger';
+        voidBtn.textContent = 'בטל';
+        voidBtn.onclick = () => {
+          const reason = prompt('ביטול קבלה #' + r.number + ' על סך ' + shekels(r.amount) + '.\nהמספר נשאר בפנקס עם סיבת הביטול. מה הסיבה?');
+          if (reason === null) return;
+          voidReceipt(r.number, reason);
+        };
+        actions.appendChild(voidBtn);
+      }
+      row.appendChild(actions);
+      box.appendChild(row);
+    });
+  }
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  async function issue() {
+    const name = $('f-name').value.trim();
+    const amount = $('f-amount').value.trim();
+    if (!name) { status('status', 'חסר שם התורם', 'error'); return; }
+    if (!amount) { status('status', 'חסר סכום', 'error'); return; }
+    $('issue-btn').disabled = true;
+    status('status', 'מפיק...', 'loading');
+    try {
+      const data = await api('/api/receipts', {
+        body: { action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim() },
+      });
+      book = data.receipts;
+      renderTotals(data.totals);
+      renderLedger();
+      status('status', 'קבלה #' + data.receipt.number + ' הופקה. פותח הדפסה...', 'success');
+      $('f-name').value = '';
+      $('f-amount').value = '';
+      $('f-note').value = '';
+      printReceipt(data.receipt);
+    } catch (e) {
+      if (e.message !== 'unauthorized') status('status', 'שגיאה: ' + e.message, 'error');
+    } finally {
+      $('issue-btn').disabled = false;
+    }
+  }
+
+  async function voidReceipt(number, reason) {
+    try {
+      const data = await api('/api/receipts', { body: { action: 'void', number, reason } });
+      book = data.receipts;
+      renderTotals(data.totals);
+      renderLedger();
+      status('status', 'קבלה #' + number + ' בוטלה.', 'success');
+    } catch (e) {
+      if (e.message !== 'unauthorized') status('status', 'שגיאה: ' + e.message, 'error');
+    }
+  }
+
+  async function loadBook() {
+    const data = await api('/api/receipts');
+    book = data.receipts;
+    renderTotals(data.totals);
+    renderLedger();
+  }
+
+  // ── Session ───────────────────────────────────────────────────────────
+  function showLogin(message) {
+    me = null;
+    $('app').style.display = 'none';
+    $('no-access').style.display = 'none';
+    $('login-card').style.display = 'block';
+    $('pw').value = '';
+    if (message) status('login-status', message, 'error'); else clearStatus('login-status');
+  }
+
+  async function showApp() {
+    $('login-card').style.display = 'none';
+    const allowed = me.roles.includes('admin') || me.roles.includes('receipts');
+    $('no-access').style.display = allowed ? 'none' : 'block';
+    $('app').style.display = allowed ? 'block' : 'none';
+    if (!allowed) return;
+    $('who').textContent = me.name;
+    setType('donation');
+    $('f-date').value = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    await loadBook();
+  }
+
+  async function doLogin() {
+    const username = $('u').value.trim();
+    const password = $('pw').value;
+    if (!username || !password) return;
+    $('login-btn').disabled = true;
+    status('login-status', 'בודק...', 'loading');
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { status('login-status', data.error || 'שם משתמש או סיסמה שגויים', 'error'); return; }
+      me = data.user;
+      clearStatus('login-status');
+      await showApp();
+    } catch (e) {
+      status('login-status', 'שגיאה: ' + e.message, 'error');
+    } finally {
+      $('login-btn').disabled = false;
+    }
+  }
+
+  async function doLogout() {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* sign out locally anyway */ }
+    showLogin();
+  }
+
+  (async () => {
+    try {
+      const r = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (!r.ok) { showLogin(); return; }
+      me = (await r.json()).user;
+      await showApp();
+    } catch { showLogin(); }
+  })();
+</script>
+</body>
+</html>
