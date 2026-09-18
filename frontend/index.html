@@ -64,10 +64,15 @@
             // leave that tab unable to notice a later build.
             if (!hadController) { hadController = true; return; }
             try {
-              // Once per visit, so a build that somehow keeps claiming can't
-              // put the page in a reload loop.
-              if (sessionStorage.getItem('sw-reloaded')) return;
-              sessionStorage.setItem('sw-reloaded', '1');
+              // A loop would come back within a second; a second deploy is
+              // minutes or hours away. Timing them apart lets a tab left open
+              // all day pick up every build, while a build that somehow keeps
+              // claiming the page still cannot put it in a spin. Once per
+              // visit was the first attempt, and it stranded a tab that lived
+              // through two deploys on the one in between.
+              var last = +(sessionStorage.getItem('sw-reloaded') || 0);
+              if (Date.now() - last < 20000) return;
+              sessionStorage.setItem('sw-reloaded', String(Date.now()));
             } catch (_) { return; }
             location.reload();
           });
