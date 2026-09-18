@@ -39,10 +39,6 @@ function AppContent() {
   // today instead of the date captured at mount.
   const [now, setNow] = useState(() => new Date());
 
-  // A fast or a chag prints below the Shabbat times, and the two together run
-  // past one A4 page. Which one the sheet is for is the gabbai's call, not ours.
-  const [includeExtra, setIncludeExtra] = useState(true);
-
   // Refetch on mount AND whenever the page is shown again. Phones keep the PWA
   // suspended for days; without this, resuming it paints last week's content
   // until the user pulls to refresh.
@@ -170,10 +166,6 @@ function AppContent() {
   const roshBeforeShabbat = !!(rosh && !roshTakesOver && rosh.date < data.shabbat_date);
   const roshAfterShabbat = !!(rosh && !roshTakesOver && !roshBeforeShabbat);
 
-  // What the switch beside the print button is offering to leave off.
-  const extraCard = rosh && !roshTakesOver ? rosh : fastDay;
-  const extraCardName = extraCard ? (extraCard[lang] || extraCard.en || extraCard.he) : null;
-
   // Chronology: a fast that falls before the upcoming Shabbat is shown above
   // the Shabbat timeline; otherwise below it.
   const fastBeforeShabbat = !!(fastDay && view.shabbat_date && fastDay.date < view.shabbat_date);
@@ -193,19 +185,14 @@ function AppContent() {
       <MessagesCard messages={data.messages} />
       <OmerCounter omer={omer} />
       <UpcomingDays days={upcomingDays} />
-      {fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint={!includeExtra} />}
-      {roshBeforeShabbat && <RoshHashana rosh={rosh} omitFromPrint={!includeExtra} />}
+      {fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint />}
+      {roshBeforeShabbat && <RoshHashana rosh={rosh} omitFromPrint />}
       {roshTakesOver ? <RoshHashana rosh={rosh} /> : <Timeline data={data} />}
-      {roshAfterShabbat && <RoshHashana rosh={rosh} omitFromPrint={!includeExtra} />}
-      {!fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint={!includeExtra} />}
+      {roshAfterShabbat && <RoshHashana rosh={rosh} omitFromPrint />}
+      {!fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint />}
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
-      <ActionButtons
-        data={view}
-        extraCardName={extraCardName}
-        includeExtra={includeExtra}
-        onIncludeExtra={setIncludeExtra}
-      >
+      <ActionButtons data={view}>
         <ShareImage data={view} />
         <Donations />
       </ActionButtons>

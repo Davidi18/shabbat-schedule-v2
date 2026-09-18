@@ -1,6 +1,7 @@
 {
   "_note": "Live, gabbai-editable content. The app fetches this at runtime and merges it over the built-in defaults. Edit via /admin.html (no code needed) — saving there commits this file and the site auto-updates within ~1 minute. Times/parsha/molad are NOT here; they are computed live.",
   "is_summer": null,
+  "mincha_shabbat": "17:30",
   "shiur_topic": "הלכות שבת",
   "shiur_by_rav": true,
   "kidush": "",

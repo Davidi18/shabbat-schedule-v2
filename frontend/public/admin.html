@@ -191,6 +191,10 @@
 
       <div class="card">
         <div class="field">
+          <label>שעת מנחה של שבת <span class="hint">(ריק = אוטומטי. השיעור שלפניה נקבע 45 דקות קודם. נשמר עד שתשנה — לא מתאפס אחרי שבת)</span></label>
+          <input type="text" id="f-mincha" class="ltr" placeholder="17:30" inputmode="numeric" />
+        </div>
+        <div class="field">
           <label>שעון קיץ <span class="hint">(אוטומטי מזהה לבד; שנה רק אם צריך לכפות)</span></label>
           <div class="toggle" id="summer-toggle">
             <button type="button" data-val="null" onclick="setSummer(null)">אוטומטי</button>
@@ -366,6 +370,7 @@
     $('f-shiur-rav').checked = c.shiur_by_rav !== false; // default: the Rav gives it
     $('f-messages').value = c.messages || '';
     $('f-kidush').value = c.kidush || '';
+    $('f-mincha').value = c.mincha_shabbat || '';
     cholim = Array.isArray(c.cholim) ? c.cholim.slice() : [];
     renderCholim();
     setSummer(c.is_summer ?? null);
@@ -383,6 +388,7 @@
           shiur_by_rav: $('f-shiur-rav').checked,
           messages: v('f-messages'),
           kidush: v('f-kidush'),
+          mincha_shabbat: v('f-mincha'),
           cholim: cholim,
           is_summer: summerValue,
         },

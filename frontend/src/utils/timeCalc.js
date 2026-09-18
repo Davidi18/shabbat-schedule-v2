@@ -19,7 +19,14 @@ export function calculateMincha(candleTimeStr) {
   return minutesToTime(rounded);
 }
 
+// Mincha moves with the season, and the season is a judgement the gabbai
+// makes — a fixed 18:00 suits high summer but not late September, when the
+// community brings it forward. A time set in the admin page wins; with none
+// set it falls back to the old rule.
 export function calculateMinchaShabbat(data) {
+  if (/^\d{1,2}:\d{2}$/.test(String(data.mincha_shabbat || '').trim())) {
+    return String(data.mincha_shabbat).trim();
+  }
   if (data.is_summer === true) return '18:00';
   if (!data.candles) return '--:--';
   const cTime = timeToMinutes(data.candles);

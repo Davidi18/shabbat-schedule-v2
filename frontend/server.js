@@ -85,7 +85,7 @@ function writeContent(obj) {
 
 // Only these fields are gabbai-editable; everything else is computed live.
 // (dvar_torah is no longer editable — it rotates automatically via /api/dvar.)
-const EDITABLE = ['shiur_topic', 'shiur_by_rav', 'messages', 'kidush', 'description', 'is_summer', 'cholim'];
+const EDITABLE = ['shiur_topic', 'shiur_by_rav', 'messages', 'kidush', 'description', 'is_summer', 'cholim', 'mincha_shabbat'];
 
 // Normalize the prayer-for-the-sick list to an array of trimmed, non-empty
 // strings (capped) — it arrives from the admin page as a JSON array.
@@ -301,6 +301,11 @@ const server = http.createServer(async (req, res) => {
         if (!(k in incoming)) continue;
         if (k === 'cholim') next[k] = cleanCholim(incoming[k]);
         else if (k === 'shiur_by_rav') next[k] = incoming[k] !== false; // default on
+        // A time or nothing; anything else would print as nonsense.
+        else if (k === 'mincha_shabbat') {
+          const t = String(incoming[k] || '').trim();
+          next[k] = /^\d{1,2}:\d{2}$/.test(t) ? t : '';
+        }
         else next[k] = incoming[k];
       }
       next.saved_for = upcomingShabbatKey(); // weekly fields are for this Shabbat
