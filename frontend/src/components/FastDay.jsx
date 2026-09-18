@@ -15,7 +15,7 @@ function shortDate(iso, lang) {
 // per the community's customary structure. The eve and the fast day itself are
 // rendered as separate labeled sections so the two days aren't confused.
 // Included in the print flyer.
-export default function FastDay({ fast }) {
+export default function FastDay({ fast, omitFromPrint }) {
   const { t, lang } = useLang();
 
   // Re-check every minute so a tab left open drops the card once the fast ends.
@@ -49,7 +49,7 @@ export default function FastDay({ fast }) {
   );
 
   return (
-    <div className="timeline-card fast-card">
+    <div className={'timeline-card fast-card' + (omitFromPrint ? ' print-omit' : '')}>
       <h3 className="section-header">{name} <span className="fast-sub">· {hdate}</span></h3>
       {erevRows.length > 0 && (
         <section className="tl-section">

@@ -10,7 +10,7 @@ import { useLang, weekdayName } from '../i18n';
 // Times come from lib/zmanim.js getRoshHashana: zmanim recomputed for this
 // year, prayer times per the community's customary structure. Included in the
 // print flyer.
-export default function RoshHashana({ rosh }) {
+export default function RoshHashana({ rosh, omitFromPrint }) {
   const { t, lang } = useLang();
 
   // Re-check every minute so a tab left open drops the card once the chag ends.
@@ -54,7 +54,7 @@ export default function RoshHashana({ rosh }) {
   };
 
   return (
-    <div className="timeline-card fast-card rh-card">
+    <div className={'timeline-card fast-card rh-card' + (omitFromPrint ? ' print-omit' : '')}>
       <h3 className="section-header">
         {name} <span className="fast-sub">· {year}</span>
       </h3>

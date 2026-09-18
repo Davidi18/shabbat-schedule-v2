@@ -32,7 +32,7 @@ function buildIcs({ candlesIso, title }) {
   ].join('\r\n');
 }
 
-export default function ActionButtons({ data, children }) {
+export default function ActionButtons({ data, children, extraCardName, includeExtra, onIncludeExtra }) {
   const { t } = useLang();
   const [installEvt, setInstallEvt] = useState(null);
 
@@ -88,6 +88,16 @@ export default function ActionButtons({ data, children }) {
         <button onClick={handleInstall} className="btn-action btn-install">
           {t('install')}
         </button>
+      )}
+      {extraCardName && (
+        <label className="print-opt">
+          <input
+            type="checkbox"
+            checked={includeExtra}
+            onChange={(e) => onIncludeExtra(e.target.checked)}
+          />
+          {t('printInclude', extraCardName)}
+        </label>
       )}
       <button onClick={() => window.print()} className="btn-action btn-print">
         {t('print')}
