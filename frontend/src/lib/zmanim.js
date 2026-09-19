@@ -348,12 +348,17 @@ const floor15 = (d) => new Date(Math.floor(d.getTime() / 900000) * 900000);
 // Selichot, Mincha Gedola and Tefilla Zaka are fixed shul times, not zmanim.
 function ykRows(candleEvt, zErev, zDay, tz) {
   const shkiaDay = zDay.shkiah();
+  // Tefilla Zaka now has its own time, on the quarter-hour after candle
+  // lighting where Kol Nidrei used to start, and Kol Nidrei follows ten
+  // minutes on. Candle lighting is sunset less forty, so this always leaves
+  // Kol Nidrei at least a quarter of an hour before sunset.
+  const tefilaZaka = roundUp15(candleEvt.eventTime);
   return [
     { key: 'ykSelichot', day: 'erev', time: '7:00' },
     { key: 'ykMinchaGedola', day: 'erev', time: '13:15' },
     { key: 'ykCandles', day: 'erev', time: fmtTime(candleEvt.eventTime, tz) },
-    { key: 'ykTefilaZaka', day: 'erev', note: true },
-    { key: 'ykKolNidrei', day: 'erev', time: fmtTime(roundUp15(candleEvt.eventTime), tz) },
+    { key: 'ykTefilaZaka', day: 'erev', time: fmtTime(tefilaZaka, tz) },
+    { key: 'ykKolNidrei', day: 'erev', time: fmtTime(addMin(tefilaZaka, 10), tz) },
     { key: 'fastSunsetStart', day: 'erev', time: fmtTime(zErev.shkiah(), tz) },
     // Before 10am, printed without a leading zero to sit beside "7:00"/"13:15".
     { key: 'ykShacharit', day: 'day', time: fmtTime(floor5(addMin(zDay.sunrise(), -34)), tz).replace(/^0/, '') },
