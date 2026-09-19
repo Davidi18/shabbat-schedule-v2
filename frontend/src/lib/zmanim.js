@@ -411,6 +411,7 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
     const rows = [];
 
     let erevWeekdayEn = null;
+    let ykCandle = null;
     let erevSectionKey = 'fastErevSection';
     let daySectionKey = 'fastDaySection';
     if (major) {
@@ -423,6 +424,7 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
         const candleEvt = events.find((e) => e.getDesc() === 'Candle lighting' && e.eventTime &&
           sameGregDay(e.getDate().greg(), erevGreg));
         if (!candleEvt) continue; // no candle lighting → can't build the eve section
+        ykCandle = candleEvt;
         rows.push(...ykRows(candleEvt, zErev, zDay, tz));
       } else {
         const sunsetErev = begins ? begins.eventTime : zErev.shkiah();
@@ -475,6 +477,26 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       day_section_key: daySectionKey,
       // Exact instant the fast ends — the card hides itself past this moment.
       end_at: endTime.toISOString(),
+      // Yom Kippur is a yom tov with a Havdalah of its own, and the weekly
+      // engine takes that for a Shabbat. When it does, the page is Yom
+      // Kippur's, and these stand in for the Shabbat headline — as Rosh
+      // Hashana's do.
+      header: isYomKippur ? {
+        title_key: 'ykMainTitle',
+        title_args: [`ה׳${gematriya(hd.getFullYear() % 1000)}`, hd.getFullYear()],
+        end_label_key: 'ykFastEnd',
+        cd_before_key: 'cdBeforeYK',
+        cd_during_key: 'cdDuringYK',
+        footer_key: 'footerYK',
+        parsha: 'יום הכיפורים',
+        parsha_en: 'Yom Kippur',
+        candles: fmtTime(ykCandle.eventTime, tz),
+        candles_dt: ykCandle.eventTime.toISOString(),
+        havdalah: fmtTime(endTime, tz),
+        havdalah_dt: endTime.toISOString(),
+        shabbat_date: localIsoDate(dayGreg),
+        hebrew_date: hd.renderGematriya(),
+      } : null,
     };
   }
   return null;

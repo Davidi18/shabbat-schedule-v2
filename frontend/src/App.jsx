@@ -160,7 +160,15 @@ function AppContent() {
 
   // Then the headline times are the chag's own: candles on erev, and the close
   // of the second day in place of havdalah.
-  const view = roshTakesOver ? { ...data, ...rosh.header } : data;
+  // Yom Kippur has a Havdalah of its own, so once the Shabbat before it has
+  // gone out the weekly engine lands on Yom Kippur's end and dresses it up as
+  // a Shabbat — no parsha, Sunday's candles, Monday's Havdalah. Then the page
+  // belongs to Yom Kippur, as it does to Rosh Hashana.
+  const ykTakesOver = !!(fastDay && fastDay.header && fastDay.date === data.shabbat_date);
+
+  const view = roshTakesOver
+    ? { ...data, ...rosh.header }
+    : ykTakesOver ? { ...data, ...fastDay.header } : data;
 
   // Chronology, as for a fast: a chag before the Shabbat sits above it.
   const roshBeforeShabbat = !!(rosh && !roshTakesOver && rosh.date < data.shabbat_date);
@@ -185,11 +193,13 @@ function AppContent() {
       <MessagesCard messages={data.messages} />
       <OmerCounter omer={omer} />
       <UpcomingDays days={upcomingDays} />
-      {fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint />}
+      {fastBeforeShabbat && !ykTakesOver && <FastDay fast={fastDay} omitFromPrint />}
       {roshBeforeShabbat && <RoshHashana rosh={rosh} omitFromPrint />}
-      {roshTakesOver ? <RoshHashana rosh={rosh} /> : <Timeline data={data} />}
+      {roshTakesOver
+        ? <RoshHashana rosh={rosh} />
+        : ykTakesOver ? <FastDay fast={fastDay} /> : <Timeline data={data} />}
       {roshAfterShabbat && <RoshHashana rosh={rosh} omitFromPrint />}
-      {!fastBeforeShabbat && <FastDay fast={fastDay} omitFromPrint />}
+      {!fastBeforeShabbat && !ykTakesOver && <FastDay fast={fastDay} omitFromPrint />}
       <ZmanimPanel zmanim={zmanim} />
       <DvarTorah data={data} />
       <ActionButtons data={view}>
