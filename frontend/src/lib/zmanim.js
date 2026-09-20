@@ -151,6 +151,31 @@ function kidushLevanaStart(hd) {
   );
 }
 
+// A yom tov or Chol HaMoed that falls on Shabbat displaces the weekly parsha,
+// so that Shabbat is named for the festival instead. Written out rather than
+// taken from hebcal's Hebrew, which spells סכות defectively and does not name
+// Simchat Torah, kept in Israel on Shmini Atzeret itself.
+function festivalOnShabbat(evt) {
+  const d = evt.getDesc();
+  const moed = !!(evt.getFlags() & flags.CHOL_HAMOED);
+  if (/^Shmini Atzeret/.test(d)) {
+    return { he: 'שמיני עצרת ושמחת תורה', en: 'Shmini Atzeret & Simchat Torah', fr: 'Chemini Atseret et Simhat Torah', moed: false };
+  }
+  if (/^Sukkot/.test(d)) {
+    return moed
+      ? { he: 'חול המועד סוכות', en: 'Chol HaMoed Sukkot', fr: 'Hol Hamoed Souccot', moed }
+      : { he: 'סוכות', en: 'Sukkot', fr: 'Souccot', moed };
+  }
+  if (/^Pesach VII/.test(d)) return { he: 'שביעי של פסח', en: "Shvi'i shel Pesach", fr: 'Septième jour de Pessah', moed: false };
+  if (/^Pesach/.test(d)) {
+    return moed
+      ? { he: 'חול המועד פסח', en: 'Chol HaMoed Pesach', fr: 'Hol Hamoed Pessah', moed }
+      : { he: 'פסח', en: 'Pesach', fr: 'Pessah', moed };
+  }
+  if (/^Shavuot/.test(d)) return { he: 'שבועות', en: 'Shavuot', fr: 'Chavouot', moed: false };
+  return { he: stripNikud(evt.render('he')), en: evt.render('en'), fr: evt.render('en'), moed };
+}
+
 /**
  * Compute the upcoming Shabbat's live times for a community.
  * @param {object} community - a profile from lib/communities.js
@@ -200,6 +225,25 @@ export function getShabbatData(community, now = new Date()) {
     parsha_en = parshaEvt.render('en').replace(/^Parashat\s*/, '').trim();
   }
 
+  // No parsha because a festival has taken the Shabbat: name it for that
+  // festival. The candle lighting and havdalah events carry the festival's
+  // flag as well, so only the timeless day-event is the festival itself.
+  //
+  // Only when the day really is Saturday. A yom tov in midweek also has a
+  // Havdalah, which the search above mistakes for a Shabbat, and calling that
+  // Thursday "Shabbat Kodesh · Pesach" would state something untrue with
+  // confidence. Those festivals need a card of their own, as Rosh Hashana and
+  // Yom Kippur have.
+  const festivalEvt = parshaEvt || satGreg.getDay() !== 6 ? null : events.find(
+    (e) => !e.eventTime && (e.getFlags() & (flags.CHAG | flags.CHOL_HAMOED))
+      && sameGregDay(e.getDate().greg(), satGreg),
+  );
+  const festival = festivalEvt ? festivalOnShabbat(festivalEvt) : null;
+  if (festival) {
+    parsha = festival.he;
+    parsha_en = festival.en;
+  }
+
   const mev = findMevarchim(satHD);
   const moladInfo = mev ? buildMolad(mev) : { molad: '', molad_parts: null };
 
@@ -222,6 +266,12 @@ export function getShabbatData(community, now = new Date()) {
   return {
     parsha,
     parsha_en,
+    // A festival Shabbat is titled and signed off for the festival.
+    ...(festival ? {
+      title_key: 'festivalShabbatTitle',
+      title_args: [festival.he, festival.en, festival.fr],
+      footer_key: festival.moed ? 'footerMoedShabbat' : 'footerChagShabbat',
+    } : {}),
     description,
     special_shabbat_he,
     special_shabbat_en,
@@ -359,7 +409,10 @@ function ykRows(candleEvt, zErev, zDay, tz) {
     { key: 'ykCandles', day: 'erev', time: fmtTime(candleEvt.eventTime, tz) },
     { key: 'ykTefilaZaka', day: 'erev', time: fmtTime(tefilaZaka, tz) },
     { key: 'ykKolNidrei', day: 'erev', time: fmtTime(addMin(tefilaZaka, 10), tz) },
-    { key: 'fastSunsetStart', day: 'erev', time: fmtTime(zErev.shkiah(), tz) },
+    // Sunset is not listed here. On a fast that starts at sunset the line marks
+    // where it begins; on Yom Kippur the fast is already accepted at candle
+    // lighting and the congregation is in shul, so a sunset half an hour after
+    // Kol Nidrei only reads as a contradiction. (Tisha B'Av keeps it.)
     // Before 10am, printed without a leading zero to sit beside "7:00"/"13:15".
     { key: 'ykShacharit', day: 'day', time: fmtTime(floor5(addMin(zDay.sunrise(), -34)), tz).replace(/^0/, '') },
     { key: 'ykMincha', day: 'day', time: fmtTime(floor5(addMin(shkiaDay, -130)), tz) },
