@@ -64,6 +64,23 @@
     .period-range input { flex:1; min-width:0; direction:ltr; text-align:right; }
     .totals-note { font-size:0.78rem; color:var(--muted); margin:-8px 0 16px; text-align:center; }
     .search { margin-bottom:12px; }
+    .field select { width:100%; padding:11px 12px; border:1px solid #ddd; border-radius:10px; font-family:'Rubik',sans-serif; font-size:0.95rem; background:#fff; color:var(--ink); }
+    .field textarea { width:100%; padding:11px 12px; border:1px solid #ddd; border-radius:10px; font-family:'Rubik',sans-serif; font-size:0.9rem; line-height:1.7; min-height:170px; resize:vertical; }
+
+    /* Issuing from a list: pasted, previewed, then issued in one go. */
+    .fold { padding:0; }
+    .fold > summary { list-style:none; cursor:pointer; padding:14px 18px; font-weight:700; font-size:1rem; display:flex; justify-content:space-between; }
+    .fold > summary::-webkit-details-marker { display:none; }
+    .fold > summary::after { content:'▾'; color:var(--muted); }
+    .fold[open] > summary::after { content:'▴'; }
+    .fold[open] > summary { border-bottom:1px solid var(--line); }
+    .fold-body { padding:16px 18px 18px; }
+    .batch-table { width:100%; border-collapse:collapse; font-size:0.86rem; margin-top:12px; }
+    .batch-table th { text-align:right; color:var(--muted); font-weight:600; font-size:0.78rem; padding:4px 6px; border-bottom:1px solid var(--line); }
+    .batch-table td { padding:6px; border-bottom:1px solid #f0ece2; vertical-align:top; }
+    .batch-table tr.bad td { background:#fdecec; }
+    .batch-table .err { color:#b02121; font-size:0.78rem; }
+    .batch-total { margin-top:10px; font-weight:700; font-size:0.9rem; }
     .ledger-row { border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:9px; }
     .ledger-row.is-void { opacity:.55; background:#faf8f3; }
     .ledger-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
@@ -206,6 +223,15 @@
         </div>
       </div>
       <div class="field">
+        <label>אמצעי תשלום <span class="hint">(לא חובה)</span></label>
+        <select id="f-method">
+          <option value="">—</option>
+          <option value="cash">מזומן</option>
+          <option value="paybox">פייבוקס</option>
+          <option value="bank">העברה בנקאית</option>
+        </select>
+      </div>
+      <div class="field">
         <label>הערות <span class="hint">(לא חובה — למשל "לעילוי נשמת", "עבור שנת תשפ״ז")</span></label>
         <input type="text" id="f-note" placeholder="" onkeydown="if(event.key==='Enter')issue()" />
       </div>
@@ -213,6 +239,26 @@
       <div class="hint" id="issue-hint" style="text-align:center;margin-top:8px"></div>
       <div class="status" id="status"></div>
     </div>
+
+    <details class="card fold" id="batch">
+      <summary>הפקת קבלות מרשימה</summary>
+      <div class="fold-body">
+        <div class="sub" style="margin:0 0 12px">שורה לכל קבלה, השדות מופרדים בקו <b>|</b> (או בטאב, כשמעתיקים מאקסל):<br />שם | סכום | תאריך | אמצעי תשלום | הערות<br /><span class="hint">התאריך בצורה 11.9.2026. אמצעי תשלום: מזומן, פייבוקס או העברה. הערות — לא חובה.</span></div>
+        <div class="field">
+          <label>סוג</label>
+          <div class="toggle" id="batch-type">
+            <button type="button" data-val="membership" onclick="setBatchType('membership')">דמי חבר</button>
+            <button type="button" data-val="donation" onclick="setBatchType('donation')">תרומה</button>
+          </div>
+        </div>
+        <div class="field">
+          <textarea id="batch-text" placeholder="משפחת כהן | 600 | 11.9.2026 | פייבוקס" oninput="previewBatch()"></textarea>
+        </div>
+        <div id="batch-preview"></div>
+        <button class="btn btn-primary" id="batch-go" onclick="issueBatch()" style="display:none"></button>
+        <div class="status" id="batch-status"></div>
+      </div>
+    </details>
 
     <div class="card">
       <h2>הפנקס</h2>
@@ -244,6 +290,7 @@
     <div class="rc-line rc-amount"><span class="rc-key">על סך</span><span class="rc-val" id="s-amount"></span></div>
     <div class="rc-words" id="s-words"></div>
     <div class="rc-line"><span class="rc-key">בתאריך</span><span class="rc-val" id="s-date"></span></div>
+    <div class="rc-line" id="s-method-line"><span class="rc-key">אמצעי תשלום</span><span class="rc-val" id="s-method"></span></div>
     <div class="rc-line" id="s-note-line"><span class="rc-key">הערות</span><span class="rc-val" id="s-note"></span></div>
 
     <div class="rc-foot">
@@ -275,6 +322,7 @@
   let type = 'donation';
   const TYPE_TITLE = { donation: 'אישור קבלת תרומה', membership: 'אישור קבלת דמי חבר' };
   const TYPE_SHORT = { donation: 'תרומה', membership: 'דמי חבר' };
+  const METHOD_LABEL = { cash: 'מזומן', paybox: 'פייבוקס', bank: 'העברה בנקאית' };
   const $ = (id) => document.getElementById(id);
   const status = (el, msg, kind) => { const e = $(el); e.className = 'status show ' + kind; e.innerText = msg; };
   const clearStatus = (el) => { $(el).className = 'status'; };
@@ -404,6 +452,8 @@
     $('s-date').textContent = hebrewDate(r.date) + '  (' + heDate(r.date) + ')';
     $('s-note').textContent = r.note || '';
     $('s-note-line').style.display = r.note ? 'flex' : 'none';
+    $('s-method').textContent = METHOD_LABEL[r.method] || '';
+    $('s-method-line').style.display = r.method ? 'flex' : 'none';
     $('s-void').style.display = r.voided ? 'block' : 'none';
   }
 
@@ -595,7 +645,9 @@
 
       const meta = document.createElement('div');
       meta.className = 'ledger-meta';
-      meta.textContent = TYPE_SHORT[r.type] + ' · ' + heDate(r.date) + ' · הופק על ידי ' + r.issued_by_name;
+      meta.textContent = TYPE_SHORT[r.type] + ' · ' + heDate(r.date)
+        + (r.method ? ' · ' + METHOD_LABEL[r.method] : '')
+        + ' · הופק על ידי ' + r.issued_by_name;
       if (r.note) meta.textContent += ' · ' + r.note;
       row.appendChild(meta);
 
@@ -670,7 +722,7 @@
     status('status', 'מפיק...', 'loading');
     try {
       const data = await api('/api/receipts', {
-        body: { action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim() },
+        body: { action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim(), method: $('f-method').value },
       });
       book = data.receipts;
       buildPeriods();
@@ -678,6 +730,7 @@
       $('f-name').value = '';
       $('f-amount').value = '';
       $('f-note').value = '';
+      $('f-method').value = '';
       status('status', 'קבלה #' + data.receipt.number + ' הופקה.', 'success');
       await shareReceipt(data.receipt);
     } catch (e) {
@@ -696,6 +749,146 @@
       status('status', 'קבלה #' + number + ' בוטלה.', 'success');
     } catch (e) {
       if (e.message !== 'unauthorized') status('status', 'שגיאה: ' + e.message, 'error');
+    }
+  }
+
+  // ── Issuing from a list ───────────────────────────────────────────────
+  // For the start of a year, when a dozen families' dues arrive at once. The
+  // list is pasted here, never kept in the code: donors' names and sums have
+  // no business in a repository or a public file.
+  let batchType = 'membership';
+  let batchRows = [];
+
+  function setBatchType(v) {
+    batchType = v;
+    document.querySelectorAll('#batch-type button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
+    previewBatch();
+  }
+
+  function parseMethod(text) {
+    const t = String(text || '').trim();
+    if (!t) return '';
+    if (/פייבוקס|פיי בוקס|paybox/i.test(t)) return 'paybox';
+    if (/העברה|בנק|bank/i.test(t)) return 'bank';
+    if (/מזומן|cash/i.test(t)) return 'cash';
+    return null;
+  }
+
+  // A real calendar day or nothing. Date.parse is no help here: it takes the
+  // 31st of February and quietly rolls it on to the 3rd of March.
+  function realDay(y, m, d) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+  }
+
+  function parseDate(text) {
+    const t = String(text || '').trim();
+    let m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+    if (m) {
+      if (!realDay(+m[3], +m[2], +m[1])) return null;
+      return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    }
+    m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m && realDay(+m[1], +m[2], +m[3]) ? t : null;
+  }
+
+  function parseBatch(text) {
+    return text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+      const [name = '', amount = '', date = '', method = '', note = ''] = line.split(/\s*[|\t]\s*/);
+      const errs = [];
+      const sum = Number(String(amount).replace(/[^\d.]/g, ''));
+      const iso = parseDate(date);
+      const how = parseMethod(method);
+      if (!name.trim()) errs.push('חסר שם');
+      if (!(sum > 0)) errs.push('סכום לא תקין');
+      if (!iso) errs.push('תאריך לא תקין');
+      if (how === null) errs.push('אמצעי תשלום לא מוכר');
+      return { name: name.trim(), amount: sum, date: iso, method: how || '', note: note.trim(), errs };
+    });
+  }
+
+  function previewBatch() {
+    batchRows = parseBatch($('batch-text').value);
+    const box = $('batch-preview');
+    const go = $('batch-go');
+    box.innerHTML = '';
+    clearStatus('batch-status');
+    if (!batchRows.length) { go.style.display = 'none'; return; }
+
+    const table = document.createElement('table');
+    table.className = 'batch-table';
+    const head = document.createElement('tr');
+    ['שם', 'סכום', 'תאריך', 'תשלום', 'הערות'].forEach((h) => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      head.appendChild(th);
+    });
+    table.appendChild(head);
+    batchRows.forEach((r) => {
+      const tr = document.createElement('tr');
+      if (r.errs.length) tr.className = 'bad';
+      const cells = [r.name, r.amount > 0 ? shekels(r.amount) : '', r.date ? heDate(r.date) : '', METHOD_LABEL[r.method] || '', r.note];
+      cells.forEach((c) => {
+        const td = document.createElement('td');
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      if (r.errs.length) {
+        const err = document.createElement('div');
+        err.className = 'err';
+        err.textContent = r.errs.join(' · ');
+        tr.lastChild.appendChild(err);
+      }
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+
+    const bad = batchRows.filter((r) => r.errs.length).length;
+    const total = batchRows.reduce((a, r) => a + (r.amount > 0 ? r.amount : 0), 0);
+    const foot = document.createElement('div');
+    foot.className = 'batch-total';
+    foot.textContent = batchRows.length + ' קבלות · ' + TYPE_SHORT[batchType] + ' · סה״כ ' + shekels(total)
+      + (bad ? ' · ' + bad + ' שורות צריכות תיקון' : '');
+    box.appendChild(foot);
+
+    go.style.display = 'block';
+    go.disabled = bad > 0;
+    go.textContent = bad ? 'יש לתקן את השורות המסומנות' : '🧾 הפק ' + batchRows.length + ' קבלות';
+  }
+
+  // One at a time, in the order of the list, so the book numbers them in that
+  // order. If anything fails midway it stops and says exactly which ones were
+  // issued — never a silent partial run that invites issuing them twice.
+  async function issueBatch() {
+    const rows = batchRows.filter((r) => !r.errs.length);
+    if (!rows.length || rows.length !== batchRows.length) return;
+    if (!confirm('להפיק ' + rows.length + ' קבלות ' + TYPE_SHORT[batchType] + '? מספרי הקבלות יינתנו לפי סדר הרשימה.')) return;
+    const go = $('batch-go');
+    go.disabled = true;
+    const done = [];
+    try {
+      for (const r of rows) {
+        status('batch-status', 'מפיק ' + (done.length + 1) + ' מתוך ' + rows.length + '…', 'loading');
+        const data = await api('/api/receipts', {
+          body: { action: 'create', type: batchType, name: r.name, amount: r.amount, date: r.date, method: r.method, note: r.note },
+        });
+        done.push(data.receipt);
+      }
+      book = (await api('/api/receipts')).receipts;
+      buildPeriods();
+      applyFilter();
+      $('batch-text').value = '';
+      batchRows = [];
+      $('batch-preview').innerHTML = '';
+      go.style.display = 'none';
+      status('batch-status', 'הופקו ' + done.length + ' קבלות, מספרים ' + done[0].number + '–' + done[done.length - 1].number
+        + '. הן בפנקס למטה, כל אחת עם כפתור העתקה לוואטסאפ.', 'success');
+    } catch (e) {
+      const issued = done.length
+        ? 'הופקו ' + done.length + ' (' + done.map((d) => '#' + d.number + ' ' + d.name).join(', ') + '). '
+        : 'לא הופקה אף קבלה. ';
+      status('batch-status', 'נעצר באמצע: ' + e.message + '. ' + issued + 'אל תפיק את הרשימה שוב לפני שתבדוק בפנקס.', 'error');
+      go.disabled = false;
     }
   }
 
@@ -724,6 +917,7 @@
     if (!allowed) return;
     $('who').textContent = me.name;
     setType('donation');
+    setBatchType('membership');
     $('issue-btn').textContent = isDesktop() ? '🧾 הפק והעתק לוואטסאפ' : '🧾 הפק ושלח';
     $('issue-hint').textContent = isDesktop()
       ? 'הקבלה תועתק כתמונה — פתח את השיחה בוואטסאפ והדבק.'
