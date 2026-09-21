@@ -13,6 +13,7 @@
 //   POST /api/content        → save content            (role: content)
 //   GET/POST /api/receipts   → the receipt book        (role: receipts)
 //   GET/POST /api/users      → accounts and roles      (role: admin)
+//   GET  /api/archive        → past special-day schedules (role: content)
 //   anything else under /api → 404
 //   everything else          → static file from dist/, SPA fallback to index.html
 import http from 'node:http';
@@ -26,6 +27,7 @@ import {
   changeOwnPassword, startSession,
 } from './auth.js';
 import { initReceipts, listReceipts, createReceipt, voidReceipt } from './receipts.js';
+import { initArchive, maybeCapture, listArchive, SOURCES } from './archive.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,9 @@ const SEED_FILE = path.join(DIST, 'data.json'); // bundled default content
 // the gabbai already uses becomes the first admin account (see auth.js).
 initAuth(DATA_DIR);
 initReceipts(DATA_DIR);
+// Loads the zmanim engine for capturing special days. It never throws: if the
+// engine cannot load, the archive serves what it already holds.
+await initArchive(DATA_DIR, __dirname);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -191,6 +196,9 @@ const server = http.createServer(async (req, res) => {
   const url = (req.url || '/').split('?')[0];
 
   if (url === '/api/content' && req.method === 'GET') {
+    // Every page view passes through here, which makes it the natural moment
+    // to notice a special day on the page. Throttled to once an hour.
+    maybeCapture();
     return sendJSON(res, 200, effectiveContent());
   }
 
@@ -260,6 +268,14 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { return sendJSON(res, 400, { error: String(e.message || e) }); }
     }
     return sendJSON(res, 405, { error: 'method not allowed' });
+  }
+
+  // ── Archive of special days ───────────────────────────────────────────
+  if (url === '/api/archive' && req.method === 'GET') {
+    const me = userFromRequest(req);
+    if (!me) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!can(me, 'content')) return sendJSON(res, 403, { error: 'forbidden' });
+    return sendJSON(res, 200, { entries: listArchive(), sources: SOURCES });
   }
 
   // ── User management (admins only) ─────────────────────────────────────

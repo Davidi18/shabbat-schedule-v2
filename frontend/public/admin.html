@@ -92,6 +92,32 @@
     .fold-body { padding:16px 18px 18px; }
     .empty { color:var(--muted); font-size:0.9rem; }
 
+    /* The archive: one year per heading, one occasion per fold. */
+    .arch-year { font-family:'Frank Ruhl Libre',serif; font-size:1.05rem; font-weight:700; margin:16px 0 8px; color:var(--primary); }
+    .arch-year:first-child { margin-top:4px; }
+    .arch { border:1px solid var(--line); border-radius:12px; margin-bottom:8px; background:#fff; }
+    .arch > summary {
+      list-style:none; cursor:pointer; padding:11px 14px;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .arch > summary::-webkit-details-marker { display:none; }
+    .arch > summary::after { content:'▾'; color:var(--muted); margin-inline-start:auto; font-size:0.85rem; }
+    .arch[open] > summary::after { content:'▴'; }
+    .arch[open] > summary { border-bottom:1px solid var(--line); }
+    .arch-name { font-weight:700; }
+    .arch-date { color:var(--muted); font-size:0.82rem; }
+    .arch-src { font-size:0.72rem; font-weight:600; padding:2px 8px; border-radius:999px; }
+    .arch-src.flyer { background:#f3ead1; color:#6b5310; }
+    .arch-src.site { background:#e6edf8; color:#2a4a82; }
+    .arch-body { padding:10px 14px 14px; }
+    .arch-sec { font-weight:700; font-size:0.86rem; color:var(--primary); margin:10px 0 4px; }
+    .arch-sec:first-child { margin-top:0; }
+    .arch-row { display:flex; gap:12px; font-size:0.9rem; padding:2px 0; }
+    .arch-row .t { font-weight:700; min-width:44px; direction:ltr; text-align:right; }
+    .arch-row.note { color:#6b6480; font-style:italic; padding-inline-start:56px; }
+    .arch-headline { display:flex; gap:14px; flex-wrap:wrap; font-size:0.86rem; color:#5a5470; margin-bottom:6px; }
+    .arch-note { margin-top:10px; font-size:0.78rem; color:var(--muted); }
+
     /* The names sheet: hidden on screen, and the only thing that reaches the
        printer. Kept in-page (rather than a popup window) so it prints offline
        and isn't swallowed by a popup blocker. Names are set large — this is
@@ -214,6 +240,15 @@
         <h2>קבלות</h2>
         <div class="sub" style="margin:0 0 12px">הפקת אישורי קבלה על תרומות ודמי חבר, והפנקס של כל מה שהופק.</div>
         <a class="btn btn-primary" href="/receipts.html" style="display:block;text-align:center;text-decoration:none;line-height:1.2">🧾 פתח את פנקס הקבלות</a>
+      </div>
+    </div>
+
+    <!-- Archive of special days -->
+    <div id="section-archive" style="display:none">
+      <div class="card">
+        <h2>ארכיון ימים מיוחדים</h2>
+        <div class="sub" style="margin:0 0 12px">לוחות הצומות והחגים כפי שהיו. מכאן והלאה האתר שומר כל יום מיוחד בעצמו, בגרסה האחרונה שהוצגה. לוחות ישנים מהדפים המודפסים מסומנים בנפרד.</div>
+        <div id="archive-list"><div class="empty">טוען…</div></div>
       </div>
     </div>
 
@@ -419,6 +454,65 @@
     }
   }
 
+  // ── Archive ───────────────────────────────────────────────────────────
+  const civilDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function archiveRow(r) {
+    const row = el('div', 'arch-row' + (r.note ? ' note' : ''));
+    if (!r.note) row.appendChild(el('span', 't', r.time || ''));
+    row.appendChild(el('span', '', r.label));
+    return row;
+  }
+
+  function renderArchive(entries, sources) {
+    const box = $('archive-list');
+    box.innerHTML = '';
+    if (!entries.length) { box.appendChild(el('div', 'empty', 'הארכיון ריק עדיין.')); return; }
+    let year = null;
+    entries.forEach((e) => {
+      if (e.year_he !== year) {
+        year = e.year_he;
+        box.appendChild(el('div', 'arch-year', 'שנת ' + year.replace(/^ה׳/, '')));
+      }
+      const d = el('details', 'arch');
+      const sum = el('summary');
+      sum.appendChild(el('span', 'arch-name', e.occasion));
+      sum.appendChild(el('span', 'arch-date', civilDate(e.date)));
+      sum.appendChild(el('span', 'arch-src ' + e.source, sources[e.source] || e.source));
+      d.appendChild(sum);
+
+      const body = el('div', 'arch-body');
+      if (e.headline && e.headline.length) {
+        const h = el('div', 'arch-headline');
+        e.headline.forEach((x) => h.appendChild(el('span', '', x.time + ' ' + x.label)));
+        body.appendChild(h);
+      }
+      e.sections.forEach((sec) => {
+        body.appendChild(el('div', 'arch-sec', sec.title));
+        sec.rows.forEach((r) => body.appendChild(archiveRow(r)));
+      });
+      if (e.note) body.appendChild(el('div', 'arch-note', e.note));
+      d.appendChild(body);
+      box.appendChild(d);
+    });
+  }
+
+  async function loadArchive() {
+    try {
+      const data = await api('/api/archive');
+      renderArchive(data.entries || [], data.sources || {});
+    } catch (e) {
+      if (e.message !== 'unauthorized') $('archive-list').innerHTML = '<div class="empty">לא הצלחתי לטעון את הארכיון.</div>';
+    }
+  }
+
   // ── Accounts ──────────────────────────────────────────────────────────
   function roleCheckboxes(container, selected, idPrefix) {
     container.innerHTML = '';
@@ -578,12 +672,13 @@
     const admin = may('admin');
     $('section-content').style.display = content ? 'block' : 'none';
     $('section-receipts').style.display = receipts ? 'block' : 'none';
+    $('section-archive').style.display = content ? 'block' : 'none';
     $('section-users').style.display = admin ? 'block' : 'none';
     $('section-none').style.display = (content || receipts || admin) ? 'none' : 'block';
     $('section-password').open = false;
     $('sub').style.display = content ? 'block' : 'none';
 
-    if (content) await loadContent();
+    if (content) { await loadContent(); await loadArchive(); }
     if (admin) {
       roleCheckboxes($('n-roles'), ['content'], 'n-role-');
       await loadUsers();

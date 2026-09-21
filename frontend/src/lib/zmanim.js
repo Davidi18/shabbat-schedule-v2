@@ -521,6 +521,9 @@ export function getFastDay(community, now = new Date(), daysAhead = 7) {
       en: fast.render('en'),
       date: localIsoDate(dayGreg),
       he_date: `${gematriya(hd.getDate())} ${HEB_MONTHS[hd.getMonthName()] || hd.getMonthName()}`,
+      // The Hebrew year the fast falls in, for filing it in the archive.
+      hyear: hd.getFullYear(),
+      year_he: `ה׳${gematriya(hd.getFullYear() % 1000)}`,
       weekdayEn: EN_WEEKDAYS[dayGreg.getDay()],
       erev_weekday_en: erevWeekdayEn,
       major,
