@@ -219,8 +219,12 @@
         </div>
         <div class="field">
           <label>תאריך</label>
-          <input type="date" id="f-date" class="ltr" />
+          <input type="date" id="f-date" class="ltr" onchange="syncDuesYear()" />
         </div>
+      </div>
+      <div class="field" id="dues-year-field" style="display:none">
+        <label>שנת חברות <span class="hint">(נקבעת לפי תאריך התשלום — תשלום באלול הולך לשנה הבאה)</span></label>
+        <select id="f-dues-year" onchange="this.dataset.touched = '1'"></select>
       </div>
       <div class="field">
         <label>אמצעי תשלום <span class="hint">(לא חובה)</span></label>
@@ -250,6 +254,10 @@
             <button type="button" data-val="membership" onclick="setBatchType('membership')">דמי חבר</button>
             <button type="button" data-val="donation" onclick="setBatchType('donation')">תרומה</button>
           </div>
+        </div>
+        <div class="field" id="batch-year-field">
+          <label>שנת חברות</label>
+          <select id="batch-dues-year" onchange="previewBatch()"></select>
         </div>
         <div class="field">
           <textarea id="batch-text" placeholder="משפחת כהן | 600 | 11.9.2026 | פייבוקס" oninput="previewBatch()"></textarea>
@@ -437,15 +445,40 @@
     return `${punctuate(gematriya(+parts.day))} ב${month} ${punctuate(gematriya(+parts.year % 1000))}`;
   }
 
+  // The years on offer: the one the date implies, with a year either side for
+  // the family paying late or ahead. A choice the gabbai made is kept when the
+  // date changes; an untouched picker follows the date.
+  function fillDuesYears(select, around, keep) {
+    const current = keep && select.value ? +select.value : around;
+    select.innerHTML = '';
+    for (const y of [around - 1, around, around + 1]) {
+      const option = document.createElement('option');
+      option.value = String(y);
+      option.textContent = yearLetters(y) + ' (' + y + ')';
+      select.appendChild(option);
+    }
+    select.value = String([around - 1, around, around + 1].includes(current) ? current : around);
+  }
+
+  function syncDuesYear() {
+    const iso = $('f-date').value || todayIso();
+    const sel = $('f-dues-year');
+    fillDuesYears(sel, duesYearFor(iso), sel.dataset.touched === '1');
+  }
+
   function setType(v) {
     type = v;
     document.querySelectorAll('#type-toggle button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
+    $('dues-year-field').style.display = v === 'membership' ? 'block' : 'none';
+    if (v === 'membership') syncDuesYear();
   }
 
   // ── The sheet ─────────────────────────────────────────────────────────
   function fillSheet(r) {
     $('s-number').textContent = String(r.number);
-    $('s-title').textContent = TYPE_TITLE[r.type] || TYPE_TITLE.donation;
+    $('s-title').textContent = r.type === 'membership'
+      ? TYPE_TITLE.membership + ' לשנת ' + yearLetters(yearOfReceipt(r))
+      : (TYPE_TITLE[r.type] || TYPE_TITLE.donation);
     $('s-name').textContent = r.name;
     $('s-amount').textContent = shekels(r.amount);
     $('s-words').textContent = '(' + amountInWords(r.amount) + ')';
@@ -550,6 +583,24 @@
   // ── The book ──────────────────────────────────────────────────────────
   // Receipts carry a civil date; the Hebrew year each one falls in is derived
   // from it, so a book can be totalled the way the community counts a year.
+  // The year a membership fee is for. Dues arrive in Elul for the year about to
+  // begin, so a payment in Elul counts toward the next year — the same rule the
+  // server applies when none is given.
+  const HEB_YEAR_MONTH = new Intl.DateTimeFormat('en-u-ca-hebrew', { year: 'numeric', month: 'long' });
+  function duesYearFor(iso) {
+    const parts = HEB_YEAR_MONTH.formatToParts(new Date(iso + 'T12:00:00'));
+    const year = +parts.find((part) => part.type === 'year').value;
+    return parts.find((part) => part.type === 'month').value === 'Elul' ? year + 1 : year;
+  }
+  const yearLetters = (y) => punctuate(gematriya(y % 1000));
+
+  // Which Hebrew year a receipt belongs to. A donation belongs to the year it
+  // was given; dues to the year they pay for, which for Elul is the next one.
+  // Receipts issued before membership years existed fall back to the rule.
+  const yearOfReceipt = (r) => (r.type === 'membership'
+    ? (r.membership_year || duesYearFor(r.date))
+    : hebrewYearOf(r.date));
+
   const hebrewYearOf = (iso) =>
     +HEB_FMT.formatToParts(new Date(iso + 'T12:00:00')).find((part) => part.type === 'year').value;
 
@@ -564,7 +615,7 @@
       return (r) => (!from || r.date >= from) && (!to || r.date <= to);
     }
     const year = +value;
-    return (r) => hebrewYearOf(r.date) === year;
+    return (r) => yearOfReceipt(r) === year;
   }
 
   // The years the book actually covers, newest first, plus the year we are in
@@ -572,7 +623,7 @@
   function buildPeriods() {
     const select = $('period');
     const previous = select.value;
-    const years = new Set(book.map((r) => hebrewYearOf(r.date)));
+    const years = new Set(book.map((r) => yearOfReceipt(r)));
     years.add(hebrewYearOf(todayIso()));
     select.innerHTML = '';
     [...years].sort((a, b) => b - a).forEach((year) => {
@@ -645,7 +696,9 @@
 
       const meta = document.createElement('div');
       meta.className = 'ledger-meta';
-      meta.textContent = TYPE_SHORT[r.type] + ' · ' + heDate(r.date)
+      meta.textContent = TYPE_SHORT[r.type]
+        + (r.type === 'membership' ? ' ' + yearLetters(yearOfReceipt(r)) : '')
+        + ' · ' + heDate(r.date)
         + (r.method ? ' · ' + METHOD_LABEL[r.method] : '')
         + ' · הופק על ידי ' + r.issued_by_name;
       if (r.note) meta.textContent += ' · ' + r.note;
@@ -722,7 +775,10 @@
     status('status', 'מפיק...', 'loading');
     try {
       const data = await api('/api/receipts', {
-        body: { action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim(), method: $('f-method').value },
+        body: {
+          action: 'create', type, name, amount, date: $('f-date').value, note: $('f-note').value.trim(), method: $('f-method').value,
+          ...(type === 'membership' ? { membership_year: +$('f-dues-year').value } : {}),
+        },
       });
       book = data.receipts;
       buildPeriods();
@@ -731,6 +787,7 @@
       $('f-amount').value = '';
       $('f-note').value = '';
       $('f-method').value = '';
+      $('f-dues-year').dataset.touched = '';
       status('status', 'קבלה #' + data.receipt.number + ' הופקה.', 'success');
       await shareReceipt(data.receipt);
     } catch (e) {
@@ -759,8 +816,35 @@
   let batchType = 'membership';
   let batchRows = [];
 
+  // "By date" lets each line follow the Elul rule; a fixed year puts the whole
+  // list in that year, for a list gathered over months for one year.
+  function fillBatchYears() {
+    const sel = $('batch-dues-year');
+    const keep = sel.value;
+    const now = duesYearFor(todayIso());
+    sel.innerHTML = '';
+    const auto = document.createElement('option');
+    auto.value = 'auto';
+    auto.textContent = 'לפי תאריך התשלום (אלול → השנה הבאה)';
+    sel.appendChild(auto);
+    for (const y of [now - 1, now, now + 1]) {
+      const option = document.createElement('option');
+      option.value = String(y);
+      option.textContent = 'כולן לשנת ' + yearLetters(y) + ' (' + y + ')';
+      sel.appendChild(option);
+    }
+    sel.value = [...sel.options].some((o) => o.value === keep) ? keep : 'auto';
+  }
+
+  const batchDuesYear = (r) => {
+    const v = $('batch-dues-year').value;
+    return v === 'auto' ? (r.date ? duesYearFor(r.date) : null) : +v;
+  };
+
   function setBatchType(v) {
     batchType = v;
+    $('batch-year-field').style.display = v === 'membership' ? 'block' : 'none';
+    if (!$('batch-dues-year').options.length) fillBatchYears();
     document.querySelectorAll('#batch-type button').forEach((b) => b.classList.toggle('active', b.dataset.val === v));
     previewBatch();
   }
@@ -818,7 +902,8 @@
     const table = document.createElement('table');
     table.className = 'batch-table';
     const head = document.createElement('tr');
-    ['שם', 'סכום', 'תאריך', 'תשלום', 'הערות'].forEach((h) => {
+    const dues = batchType === 'membership';
+    (dues ? ['שם', 'סכום', 'תאריך', 'שנה', 'תשלום', 'הערות'] : ['שם', 'סכום', 'תאריך', 'תשלום', 'הערות']).forEach((h) => {
       const th = document.createElement('th');
       th.textContent = h;
       head.appendChild(th);
@@ -827,7 +912,10 @@
     batchRows.forEach((r) => {
       const tr = document.createElement('tr');
       if (r.errs.length) tr.className = 'bad';
-      const cells = [r.name, r.amount > 0 ? shekels(r.amount) : '', r.date ? heDate(r.date) : '', METHOD_LABEL[r.method] || '', r.note];
+      const year = dues ? batchDuesYear(r) : null;
+      const cells = dues
+        ? [r.name, r.amount > 0 ? shekels(r.amount) : '', r.date ? heDate(r.date) : '', year ? yearLetters(year) : '', METHOD_LABEL[r.method] || '', r.note]
+        : [r.name, r.amount > 0 ? shekels(r.amount) : '', r.date ? heDate(r.date) : '', METHOD_LABEL[r.method] || '', r.note];
       cells.forEach((c) => {
         const td = document.createElement('td');
         td.textContent = c;
@@ -870,7 +958,10 @@
       for (const r of rows) {
         status('batch-status', 'מפיק ' + (done.length + 1) + ' מתוך ' + rows.length + '…', 'loading');
         const data = await api('/api/receipts', {
-          body: { action: 'create', type: batchType, name: r.name, amount: r.amount, date: r.date, method: r.method, note: r.note },
+          body: {
+            action: 'create', type: batchType, name: r.name, amount: r.amount, date: r.date, method: r.method, note: r.note,
+            ...(batchType === 'membership' ? { membership_year: batchDuesYear(r) } : {}),
+          },
         });
         done.push(data.receipt);
       }

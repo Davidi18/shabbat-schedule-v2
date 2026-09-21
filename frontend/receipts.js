@@ -17,6 +17,18 @@ export const TYPES = ['donation', 'membership'];
 export const METHODS = ['cash', 'paybox', 'bank'];
 const MAX_AMOUNT = 1000000;
 
+// The year a membership fee is for. Dues arrive in Elul for the year about to
+// begin, so a payment in Elul counts toward the next Hebrew year; any other
+// month counts toward the year it is in. Intl knows the Hebrew calendar, so
+// this needs no library.
+const HEB_YEAR_MONTH = new Intl.DateTimeFormat('en-u-ca-hebrew', { year: 'numeric', month: 'long' });
+export function duesYearFor(isoDate) {
+  const parts = HEB_YEAR_MONTH.formatToParts(new Date(isoDate + 'T12:00:00Z'));
+  const year = +parts.find((p) => p.type === 'year').value;
+  return parts.find((p) => p.type === 'month').value === 'Elul' ? year + 1 : year;
+}
+const isHebrewYear = (y) => Number.isInteger(y) && y >= 5700 && y <= 6000;
+
 let dataDir = '/data';
 export function initReceipts(dir) { dataDir = dir; }
 
@@ -66,7 +78,7 @@ export function listReceipts() {
   return db.receipts.slice().sort((a, b) => b.number - a.number);
 }
 
-export function createReceipt({ type, name, amount, date, note, method }, user) {
+export function createReceipt({ type, name, amount, date, note, method, membership_year }, user) {
   if (!TYPES.includes(type)) return { error: 'סוג הקבלה אינו תקין' };
   const donor = clean(name, 80);
   if (!donor) return { error: 'חסר שם' };
@@ -77,6 +89,17 @@ export function createReceipt({ type, name, amount, date, note, method }, user) 
   if (date && !isDate(date)) return { error: 'התאריך אינו תקין' };
   const day = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
   if (method && !METHODS.includes(method)) return { error: 'אמצעי התשלום אינו תקין' };
+  // Dues belong to a membership year. Given, it must be a plausible Hebrew
+  // year; left out, it follows the payment date. Donations have none.
+  let duesYear;
+  if (type === 'membership') {
+    if (membership_year !== undefined && membership_year !== null && membership_year !== '') {
+      duesYear = Number(membership_year);
+      if (!isHebrewYear(duesYear)) return { error: 'שנת החברות אינה תקינה' };
+    } else {
+      duesYear = duesYearFor(day);
+    }
+  }
 
   // Read and write with nothing awaited in between, so two gabbaim issuing at
   // the same moment cannot be handed the same number.
@@ -89,6 +112,7 @@ export function createReceipt({ type, name, amount, date, note, method }, user) 
     date: day,
     note: clean(note, 140),
     method: method || '',
+    ...(duesYear ? { membership_year: duesYear } : {}),
     issued_at: new Date().toISOString(),
     issued_by: user.id,
     issued_by_name: user.name,
