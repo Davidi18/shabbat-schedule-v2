@@ -57,9 +57,13 @@ export default defineConfig({
         // that resumes the PWA doesn't paint last week's bundle.
         clientsClaim: true,
         skipWaiting: true,
-        // /admin.html is a real page, not part of the SPA — never answer it
-        // (or the content API) from the cached index.html shell.
-        navigateFallbackDenylist: [/^\/admin\.html/, /^\/api\//],
+        // A page with a name of its own — admin.html, receipts.html, whatever
+        // comes next — is a real document, not a route of the app, and must
+        // never be answered from the cached index.html shell. Listing them one
+        // by one is how receipts.html got missed: a visitor who had ever opened
+        // the site asked for the receipts and was handed the Shabbat times.
+        // Workbox tests path and query together, hence the optional query.
+        navigateFallbackDenylist: [/^\/[^?#]*\.html(?:[?#]|$)/, /^\/api\//],
         runtimeCaching: [
           {
             // Gabbai content + weekly halacha: always try the network first so
